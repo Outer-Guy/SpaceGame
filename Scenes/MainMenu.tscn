@@ -1,0 +1,148 @@
+[gd_scene load_steps=2 format=3 uid="uid://bi0m7wrpvd08l"]
+
+[sub_resource type="GDScript" id="GDScript_ikndx"]
+resource_name = "MainMenu"
+script/source = "extends Control
+
+@export var address : String = \"127.0.0.1\"
+@export var port : int = 4444
+@export var max_players : int = 4
+@export var compression_type : ENetConnection.CompressionMode = ENetConnection.CompressionMode.COMPRESS_NONE
+
+var peer : ENetMultiplayerPeer
+
+func _ready() -> void:
+	multiplayer.peer_connected.connect(on_peer_connected)
+	multiplayer.peer_disconnected.connect(on_peer_disconnected)
+	multiplayer.connected_to_server.connect(on_connected_to_server)
+	multiplayer.connection_failed.connect(on_connection_failed)
+
+func get_address() -> String:
+	return str(address) + \":\" + str(port)
+
+@rpc(\"any_peer\")
+func send_player_info(id: int, name: String) -> void:
+	if !GameManager.Players.has(id):
+		GameManager.Players[id] = {
+			\"id\" = id,
+			\"name\" = name
+		}
+		
+	if multiplayer.is_server():
+		for i : int in GameManager.Players:
+			send_player_info(i, GameManager.Players[i].name)
+
+# On every connection and disconnection, server and client
+func on_peer_connected(id : int) -> void:
+	print(\"Player Connected: id = \" + str(id))
+
+func on_peer_disconnected(id : int) -> void:
+	print(\"Player Disconnected: id = \" + str(id))
+
+# On succesful or failed connection, only client
+func on_connected_to_server() -> void:
+	print(\"Succesfull connection to \" + get_address())
+	
+	send_player_info.rpc_id(1, multiplayer.get_unique_id(), $LineEdit.text)
+
+func on_connection_failed() -> void:
+	print(\"Failed to connect to \" + get_address())
+
+func _on_start_host_button_down() -> void:
+	peer = ENetMultiplayerPeer.new()
+	var error : Error = peer.create_server(port, max_players)
+	if error != OK:
+		print(\"Failed to Host at port: \" + str(port))
+		return
+	peer.get_host().compress(compression_type)
+	
+	multiplayer.set_multiplayer_peer(peer)
+	print(\"Server Started at \" + get_address())
+
+func _on_start_client_button_down() -> void:
+	peer = ENetMultiplayerPeer.new()
+	var error : Error = peer.create_client(address, port)
+	if error != OK:
+		print(\"Failed to create client trying to connect to \" + get_address())
+		return
+	peer.get_host().compress(compression_type)
+	multiplayer.set_multiplayer_peer(peer)
+
+func _on_single_player_button_down() -> void:
+	pass # Replace with function body.
+"
+
+[node name="Control" type="Control"]
+layout_mode = 3
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 0
+script = SubResource("GDScript_ikndx")
+
+[node name="SinglePlayer" type="Button" parent="."]
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -328.0
+offset_top = -244.0
+offset_right = -120.0
+offset_bottom = -110.0
+grow_horizontal = 2
+grow_vertical = 0
+text = "SinglePlayer"
+
+[node name="Start Host" type="Button" parent="."]
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -105.0
+offset_top = -244.0
+offset_right = 103.0
+offset_bottom = -110.0
+grow_horizontal = 2
+grow_vertical = 0
+text = "Start Host"
+
+[node name="Start Client" type="Button" parent="."]
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = 122.0
+offset_top = -244.0
+offset_right = 330.0
+offset_bottom = -110.0
+grow_horizontal = 2
+grow_vertical = 0
+text = "Join as Client"
+
+[node name="LineEdit" type="LineEdit" parent="."]
+layout_mode = 0
+offset_left = -231.0
+offset_top = -375.0
+offset_right = 270.0
+offset_bottom = -344.0
+
+[node name="TextEdit" type="TextEdit" parent="LineEdit"]
+layout_mode = 0
+offset_left = -73.0
+offset_top = -8.0
+offset_right = -4.0
+offset_bottom = 37.0
+text = "Name: "
+
+[connection signal="button_down" from="SinglePlayer" to="." method="_on_single_player_button_down"]
+[connection signal="button_down" from="Start Host" to="." method="_on_start_host_button_down"]
+[connection signal="button_down" from="Start Client" to="." method="_on_start_client_button_down"]
