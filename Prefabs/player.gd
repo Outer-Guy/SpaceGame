@@ -1,37 +1,44 @@
 extends CharacterBody2D
 
 
-const SPEED : float = 300.0
-const JUMP_VELOCITY : float  = -400.0
-
+@export var SPEED: float = 300.0
+@export var JUMP_VELOCITY: float = -400.0
+var TRYHOOK : bool = false
+var CLICKPOSITION: Vector2
+var tempD: Dictionary
 
 
 func _process(delta: float) -> void:
 	pass
 
 func _physics_process(delta: float) -> void:
-	# Add the gravity.
-	if not is_on_floor():
-		velocity += get_gravity() * delta
-
-	# Handle jump.
-	if Input.is_action_just_pressed("ui_accept") and is_on_floor():
-		velocity.y = JUMP_VELOCITY
-
-	# Get the input direction and handle the movement/deceleration.
-	# As good practice, you should replace UI actions with custom gameplay actions.
-	var direction := Input.get_axis("ui_left", "ui_right")
-	if direction:
-		velocity.x = direction * SPEED
-	else:
-		velocity.x = move_toward(velocity.x, 0, SPEED)
-
+	
+	velocity = transform.x * SPEED
+	
+	if TRYHOOK:
+		Input()
+	
 	move_and_slide()
-	pass
+	
 
 func _unhandled_input(event: InputEvent) -> void:
-	if event is InputEventKey:
-		if event.pressed and event.keycode == KEY_ESCAPE:
-			get_tree().quit()
-	pass
-	
+	if event is InputEventScreenTouch:
+		
+		TRYHOOK = event.pressed
+		CLICKPOSITION = event.position
+
+func Input() -> void:
+	var space_state: PhysicsDirectSpaceState2D = get_world_2d().direct_space_state
+	var query: PhysicsRayQueryParameters2D = PhysicsRayQueryParameters2D.create(global_position, CLICKPOSITION)
+	var result: Dictionary = space_state.intersect_ray(query)
+	tempD = result
+	if !result.is_empty():
+		queue_redraw()
+	else:
+		TRYHOOK = false
+		
+		
+func _draw() -> void:
+	if !tempD.is_empty():
+		draw_line(Vector2.ZERO, tempD.get("position") - global_position,Color.WHITE,-1)
+		print(global_position,tempD.get("position"))

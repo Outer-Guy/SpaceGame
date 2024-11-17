@@ -9,8 +9,10 @@
 script = ExtResource("1_45rtu")
 
 [node name="Player" parent="." instance=ExtResource("2_7q0kk")]
-position = Vector2(188, 488)
+position = Vector2(316, 319)
 script = ExtResource("3_14yg8")
+SPEED = null
+JUMP_VELOCITY = null
 
 [node name="Asteroid" parent="." instance=ExtResource("3_8cg06")]
-position = Vector2(590, 286)
+position = Vector2(931, 146)
