@@ -14,6 +14,11 @@ config/name="Nuevo Proyecto de Juego"
 config/features=PackedStringArray("4.3", "Mobile")
 config/icon="res://icon.svg"
 
+[debug]
+
+gdscript/warnings/untyped_declaration=2
+gdscript/warnings/inferred_declaration=2
+
 [rendering]
 
 renderer/rendering_method="mobile"
