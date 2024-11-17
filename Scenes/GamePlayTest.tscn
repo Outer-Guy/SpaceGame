@@ -1,3 +1,16 @@
-[gd_scene format=3 uid="uid://c1ia02k5bags2"]
+[gd_scene load_steps=5 format=3 uid="uid://c1ia02k5bags2"]
+
+[ext_resource type="Script" path="res://Scenes/game_play_test.gd" id="1_45rtu"]
+[ext_resource type="PackedScene" uid="uid://deq633jirwd41" path="res://Prefabs/player.tscn" id="2_7q0kk"]
+[ext_resource type="PackedScene" uid="uid://dvwb55aw2eyvw" path="res://Prefabs/Asteroid.tscn" id="3_8cg06"]
+[ext_resource type="Script" path="res://Prefabs/player.gd" id="3_14yg8"]
 
 [node name="Node2D" type="Node2D"]
+script = ExtResource("1_45rtu")
+
+[node name="Player" parent="." instance=ExtResource("2_7q0kk")]
+position = Vector2(259, 280)
+script = ExtResource("3_14yg8")
+
+[node name="Asteroid" parent="." instance=ExtResource("3_8cg06")]
+position = Vector2(931, 146)
