@@ -1,3 +1,90 @@
-[gd_scene format=3 uid="uid://dclogvhfkhqrq"]
+[gd_scene load_steps=2 format=3 uid="uid://dclogvhfkhqrq"]
+
+[sub_resource type="GDScript" id="GDScript_iobig"]
+resource_name = "ChatManager"
+script/source = "extends Control
+
+func _on_send_button_down() -> void:
+	if $MessageLine/LineEdit.text == \"\": return
+	
+	send_message.rpc($MessageLine/LineEdit.text)
+	$MessageLine/LineEdit.text = \"\"
+
+@rpc(\"any_peer\", \"call_local\")
+func send_message(msg : String) -> void:
+	var sender_id : int = multiplayer.get_remote_sender_id()
+	$TextChat.text += \"\\n(\"
+	if sender_id == 1 : $TextChat.text += \"Host\"
+	else : $TextChat.text += \"Client\"
+	$TextChat.text += \", ID: \" + str(sender_id) + \") \" + GameManager.Players[sender_id][\"username\"] + \": \"
+	$TextChat.text += msg
+	pass
+"
 
 [node name="MultiplayerLobby" type="Node2D"]
+
+[node name="Chat" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 0
+offset_right = 554.0
+offset_bottom = 646.0
+script = SubResource("GDScript_iobig")
+
+[node name="ColorRect" type="ColorRect" parent="Chat"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.227451, 0.227451, 0.227451, 0.607843)
+
+[node name="TextChat" type="RichTextLabel" parent="Chat"]
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -271.0
+offset_top = -641.0
+offset_right = 271.0
+offset_bottom = -59.0
+grow_horizontal = 2
+grow_vertical = 0
+focus_mode = 2
+fit_content = true
+selection_enabled = true
+text_direction = 1
+
+[node name="MessageLine" type="Control" parent="Chat"]
+layout_mode = 1
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+grow_vertical = 0
+
+[node name="LineEdit" type="LineEdit" parent="Chat/MessageLine"]
+layout_mode = 1
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 5.0
+offset_top = -54.0
+offset_right = 460.0
+offset_bottom = -4.0
+grow_vertical = 0
+
+[node name="Send" type="Button" parent="Chat/MessageLine"]
+layout_mode = 1
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 463.0
+offset_top = -54.0
+offset_right = 550.0
+offset_bottom = -4.0
+grow_vertical = 0
+text = "Send"
+
+[connection signal="button_down" from="Chat/MessageLine/Send" to="Chat" method="_on_send_button_down"]
