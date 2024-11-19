@@ -1,4 +1,4 @@
-[gd_scene load_steps=2 format=3 uid="uid://bi0m7wrpvd08l"]
+[gd_scene load_steps=3 format=3 uid="uid://bi0m7wrpvd08l"]
 
 [sub_resource type="GDScript" id="GDScript_ikndx"]
 resource_name = "MainMenu"
@@ -16,18 +16,10 @@ func _ready() -> void:
 	multiplayer.peer_disconnected.connect(on_peer_disconnected)
 	multiplayer.connected_to_server.connect(on_connected_to_server)
 	multiplayer.connection_failed.connect(on_connection_failed)
+	PlayerData.on_all_data_set.connect(handle_scene_transition)
 
 func get_address() -> String:
 	return str(address) + \":\" + str(port)
-
-@rpc(\"any_peer\", \"call_local\")
-func handle_scene_transition() -> void :	
-	if GameManager.gamestate == GameManager.GAMESTATE.MAIN_MENU :
-		GameManager.gamestate = GameManager.GAMESTATE.LOBBY
-		GameManager.load_scene(\"res://Scenes/MultiplayerLobby.tscn\")
-		self.hide()
-		
-		
 
 # On every connection and disconnection, server and client
 func on_peer_connected(id : int) -> void:
@@ -40,39 +32,42 @@ func on_peer_disconnected(id : int) -> void:
 func on_connected_to_server() -> void:
 	print(\"Succesfull connection to \" + get_address())
 	
-	GameManager.send_player_info.rpc_id(1, multiplayer.get_unique_id(), $LineEdit.text)
-	handle_scene_transition.rpc()
+	PlayerData.on_player_connected.rpc_id(1, multiplayer.get_unique_id(), $LineEdit.text)
 
 func on_connection_failed() -> void:
 	print(\"Failed to connect to \" + get_address())
 
-func try_get_username() -> bool :
+func handle_scene_transition() -> void :
+	PlayerData.set_gamestate.rpc(PlayerData.local.id, PlayerData.GAMESTATE.LOBBY)
+	GameManager.load_scene(\"res://Scenes/MultiplayerLobby.tscn\")
+
+func username_not_null() -> bool :
 	if($LineEdit.text == \"\"): 
 		$LineEdit/Warning.show()
 		return false
 	else :
 		$LineEdit/Warning.hide()
-		GameManager.localUsername = $LineEdit.text
 		return true
 
 func _on_start_host_button_down() -> void:
-	if !try_get_username() : return
+	if !username_not_null() : return
 	
 	peer = ENetMultiplayerPeer.new()
 	var error : Error = peer.create_server(port, max_players)
-	if error != OK:
-		print(\"Failed to Host at port: \" + str(port))
-		print(error)
+	if error:
+		printerr(\"Failed to Host at port: \" + str(port))
+		printerr(error)
 		return
 	peer.get_host().compress(compression_type)
 	
 	multiplayer.set_multiplayer_peer(peer)
 	print(\"Server Started at \" + get_address())
 	
-	GameManager.send_player_info(multiplayer.get_unique_id(), GameManager.localUsername)
+	PlayerData.create_player_data(multiplayer.get_unique_id(), $LineEdit.text)
+	handle_scene_transition()
 
 func _on_start_client_button_down() -> void:
-	if !try_get_username() : return
+	if !username_not_null() : return
 	
 	peer = ENetMultiplayerPeer.new()
 	var error : Error = peer.create_client(address, port)
@@ -84,6 +79,16 @@ func _on_start_client_button_down() -> void:
 
 func _on_single_player_button_down() -> void:
 	pass # Replace with function body.
+"
+
+[sub_resource type="GDScript" id="GDScript_o8gq4"]
+script/source = "extends LineEdit
+
+func _ready() -> void:
+	if OS.get_cmdline_args().size() > 1 :
+		self.text = OS.get_cmdline_args()[1]
+	else :
+		self.text = \"Guest\" + str(RandomNumberGenerator.new().randi_range(1,999))
 "
 
 [node name="Control" type="Control"]
@@ -149,6 +154,7 @@ offset_top = -375.0
 offset_right = 270.0
 offset_bottom = -344.0
 text = "Default"
+script = SubResource("GDScript_o8gq4")
 
 [node name="Username" type="RichTextLabel" parent="LineEdit"]
 layout_mode = 0

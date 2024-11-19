@@ -1,4 +1,4 @@
-[gd_scene load_steps=3 format=3 uid="uid://dclogvhfkhqrq"]
+[gd_scene load_steps=4 format=3 uid="uid://dclogvhfkhqrq"]
 
 [sub_resource type="GDScript" id="GDScript_7wo5v"]
 resource_name = "Ready"
@@ -31,10 +31,13 @@ func OnState() -> void:
 resource_name = "ChatManager"
 script/source = "extends Control
 
+func _ready() -> void :
+	send_message.rpc(\" joined the lobby\")
+
 func _on_send_button_down() -> void:
 	if $MessageLine/LineEdit.text == \"\": return
 	
-	send_message.rpc($MessageLine/LineEdit.text)
+	send_message.rpc(\": \" + $MessageLine/LineEdit.text)
 	$MessageLine/LineEdit.text = \"\"
 
 @rpc(\"any_peer\", \"call_local\")
@@ -43,9 +46,17 @@ func send_message(msg : String) -> void:
 	$TextChat.text += \"\\n(\"
 	if sender_id == 1 : $TextChat.text += \"Host\"
 	else : $TextChat.text += \"Client\"
-	$TextChat.text += \", ID: \" + str(sender_id) + \") \" + GameManager.Players[sender_id][\"username\"] + \": \"
+	$TextChat.text += \", ID: \" + str(sender_id) + \") \" + PlayerData.by_id(sender_id).username
 	$TextChat.text += msg
 	pass
+"
+
+[sub_resource type="GDScript" id="GDScript_rnsxx"]
+script/source = "extends Control
+
+func _input(event: InputEvent) -> void:
+	if Input.is_key_pressed(KEY_ENTER) :
+		$Send.button_down.emit()
 "
 
 [node name="MultiplayerLobby" type="Node2D"]
@@ -91,6 +102,7 @@ anchors_preset = 2
 anchor_top = 1.0
 anchor_bottom = 1.0
 grow_vertical = 0
+script = SubResource("GDScript_rnsxx")
 
 [node name="LineEdit" type="LineEdit" parent="Chat/MessageLine"]
 layout_mode = 1
