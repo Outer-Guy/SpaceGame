@@ -1,4 +1,31 @@
-[gd_scene load_steps=2 format=3 uid="uid://dclogvhfkhqrq"]
+[gd_scene load_steps=3 format=3 uid="uid://dclogvhfkhqrq"]
+
+[sub_resource type="GDScript" id="GDScript_7wo5v"]
+resource_name = "Ready"
+script/source = "extends Node2D
+
+
+
+func _on_start_game_button_down() -> void:
+	print(\"Pressed\")
+	OnState.rpc()
+	#GameManager.load_scene(\"res://Scenes/GamePlayTest.tscn\")
+
+@rpc(\"any_peer\", \"call_local\")
+func OnState() -> void:
+	
+	GameManager.Players[multiplayer.get_remote_sender_id()][\"Ready\"] = !GameManager.Players[multiplayer.get_remote_sender_id()][\"Ready\"]
+	print(\"NewState:\", GameManager.Players[multiplayer.get_remote_sender_id()][\"Ready\"])
+	var areAllReady : bool = true
+	for b : int in GameManager.Players:
+		areAllReady = areAllReady && GameManager.Players[b][\"Ready\"]
+		print(\"isReady:\", GameManager.Players[b][\"Ready\"])
+	print(\"areAllReady:\", areAllReady)
+	if areAllReady:
+		GameManager.load_scene(\"res://Scenes/GamePlayTest.tscn\")
+		
+	
+"
 
 [sub_resource type="GDScript" id="GDScript_iobig"]
 resource_name = "ChatManager"
@@ -22,6 +49,7 @@ func send_message(msg : String) -> void:
 "
 
 [node name="MultiplayerLobby" type="Node2D"]
+script = SubResource("GDScript_7wo5v")
 
 [node name="Chat" type="Control" parent="."]
 layout_mode = 3
@@ -87,4 +115,19 @@ offset_bottom = -4.0
 grow_vertical = 0
 text = "Send"
 
+[node name="Start Game" type="Button" parent="."]
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = 893.0
+offset_top = 474.0
+offset_right = 1101.0
+offset_bottom = 608.0
+grow_horizontal = 2
+grow_vertical = 0
+text = "Start Game"
+
 [connection signal="button_down" from="Chat/MessageLine/Send" to="Chat" method="_on_send_button_down"]
+[connection signal="button_down" from="Start Game" to="." method="_on_start_game_button_down"]

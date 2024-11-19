@@ -9,23 +9,11 @@
 script = ExtResource("1_45rtu")
 
 [node name="Player" parent="." instance=ExtResource("2_7q0kk")]
-position = Vector2(110, 283)
+position = Vector2(592, 488)
 motion_mode = 1
 wall_min_slide_angle = 3.14159
 platform_on_leave = 2
 script = ExtResource("3_14yg8")
 
 [node name="Asteroid" parent="." instance=ExtResource("3_8cg06")]
-position = Vector2(173, 109)
-
-[node name="Asteroid2" parent="." instance=ExtResource("3_8cg06")]
-position = Vector2(182, 530)
-
-[node name="Asteroid3" parent="." instance=ExtResource("3_8cg06")]
-position = Vector2(939, 136)
-
-[node name="Asteroid4" parent="." instance=ExtResource("3_8cg06")]
-position = Vector2(939, 497)
-
-[node name="Asteroid5" parent="." instance=ExtResource("3_8cg06")]
-position = Vector2(580, 303)
+position = Vector2(590, 286)

@@ -20,19 +20,6 @@ func _ready() -> void:
 func get_address() -> String:
 	return str(address) + \":\" + str(port)
 
-@rpc(\"any_peer\", \"call_remote\")
-func send_player_info(id: int, username: String) -> void:
-	if !GameManager.Players.has(id):
-		GameManager.Players[id] = {
-			\"id\" = id,
-			\"username\" = username,
-			\"gamestate\" = GameManager.GAMESTATE.MAIN_MENU
-		}
-	
-	if multiplayer.is_server():
-		for i : int in GameManager.Players:
-			send_player_info.rpc(i, GameManager.Players[i].username)
-
 @rpc(\"any_peer\", \"call_local\")
 func handle_scene_transition() -> void :	
 	if GameManager.gamestate == GameManager.GAMESTATE.MAIN_MENU :
@@ -40,9 +27,7 @@ func handle_scene_transition() -> void :
 		GameManager.load_scene(\"res://Scenes/MultiplayerLobby.tscn\")
 		self.hide()
 		
-		print(\"---\" + GameManager.localUsername + \"---\")
-		print(GameManager.Players)
-		print(\"---------------------\")
+		
 
 # On every connection and disconnection, server and client
 func on_peer_connected(id : int) -> void:
@@ -55,7 +40,7 @@ func on_peer_disconnected(id : int) -> void:
 func on_connected_to_server() -> void:
 	print(\"Succesfull connection to \" + get_address())
 	
-	send_player_info.rpc_id(1, multiplayer.get_unique_id(), $LineEdit.text)
+	GameManager.send_player_info.rpc_id(1, multiplayer.get_unique_id(), $LineEdit.text)
 	handle_scene_transition.rpc()
 
 func on_connection_failed() -> void:
@@ -84,7 +69,7 @@ func _on_start_host_button_down() -> void:
 	multiplayer.set_multiplayer_peer(peer)
 	print(\"Server Started at \" + get_address())
 	
-	send_player_info(multiplayer.get_unique_id(), GameManager.localUsername)
+	GameManager.send_player_info(multiplayer.get_unique_id(), GameManager.localUsername)
 
 func _on_start_client_button_down() -> void:
 	if !try_get_username() : return
@@ -163,8 +148,10 @@ offset_left = -231.0
 offset_top = -375.0
 offset_right = 270.0
 offset_bottom = -344.0
+text = "Default"
 
 [node name="Username" type="RichTextLabel" parent="LineEdit"]
+layout_mode = 0
 offset_left = -88.0
 offset_top = 4.0
 offset_right = 9.0
