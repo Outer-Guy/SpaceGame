@@ -4,27 +4,21 @@
 resource_name = "Ready"
 script/source = "extends Node2D
 
-
+var toogle : bool = false
 
 func _on_start_game_button_down() -> void:
-	print(\"Pressed\")
-	OnState.rpc()
-	#GameManager.load_scene(\"res://Scenes/GamePlayTest.tscn\")
+	toogle = !toogle
+	if toogle : $\"Start Game\".text = \"READY!\"
+	else : $\"Start Game\".text = \"Start Game\"
+	handle_ready.rpc_id(1, toogle)
 
 @rpc(\"any_peer\", \"call_local\")
-func OnState() -> void:
+func handle_ready(newState : bool) -> void:
+	print(\"set \" + str(multiplayer.get_remote_sender_id()) + \" to \" + str(newState))
+	PlayerData.set_ready.rpc(multiplayer.get_remote_sender_id(), newState)
 	
-	GameManager.Players[multiplayer.get_remote_sender_id()][\"Ready\"] = !GameManager.Players[multiplayer.get_remote_sender_id()][\"Ready\"]
-	print(\"NewState:\", GameManager.Players[multiplayer.get_remote_sender_id()][\"Ready\"])
-	var areAllReady : bool = true
-	for b : int in GameManager.Players:
-		areAllReady = areAllReady && GameManager.Players[b][\"Ready\"]
-		print(\"isReady:\", GameManager.Players[b][\"Ready\"])
-	print(\"areAllReady:\", areAllReady)
-	if areAllReady:
-		GameManager.load_scene(\"res://Scenes/GamePlayTest.tscn\")
-		
-	
+	if PlayerData.all_ready() :
+		GameManager.load_scene.rpc(\"res://Scenes/GamePlayTest.tscn\")
 "
 
 [sub_resource type="GDScript" id="GDScript_iobig"]

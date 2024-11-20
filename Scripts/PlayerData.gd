@@ -12,10 +12,10 @@ class PlayerInfo:
 	var gamestate : GAMESTATE = GAMESTATE.MAIN_MENU
 	var ready : bool
 	
-	static func create(id : int, username : String) -> PlayerInfo :
+	static func create(new_id : int, new_username : String) -> PlayerInfo :
 		var player_info: PlayerInfo = PlayerInfo.new()
-		player_info.id = id
-		player_info.username = username
+		player_info.id = new_id
+		player_info.username = new_username
 		player_info.gamestate = GAMESTATE.MAIN_MENU
 		player_info.ready = false
 		return player_info
@@ -31,7 +31,7 @@ class PlayerInfo:
 	
 	func log() -> void :
 		var msg : String = ""
-		msg += "\n("
+		msg += "("
 		if self.id == 1 : msg += "Host"
 		else : msg += "Client"
 		msg += ", ID: " + str(self.id) + ") " + self.username + ": "
@@ -51,6 +51,11 @@ class PlayerInfo:
 
 func _ready() -> void:
 	multiplayer.peer_disconnected.connect(on_peer_disconnected)
+
+func log_all() -> void:
+	print(local.username + " got:")
+	for data : PlayerInfo in all_data.values():
+		data.log()
 
 # Stores all PlayerInfo from players, should not be accessed directly outside this script
 var all_data : Dictionary = {}
@@ -73,10 +78,10 @@ func by_username(user : String) -> Array :
 	return list
 
 func all_ready() -> bool :
-	var ready : bool = true
-	for data : PlayerInfo in all_data :
-		ready = ready && data.ready
-	return ready
+	var are_ready : bool = true
+	for data : PlayerInfo in all_data.values() :
+		are_ready = are_ready && data.ready
+	return are_ready
 
 # -------------- SETTERS --------------------
 func check_id(id : int) -> bool :
