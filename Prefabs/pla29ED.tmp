@@ -8,9 +8,7 @@ script/source = "extends CharacterBody2D
 @export_category(\"Movement\")
 @export var MAXSPEED: float = 300
 @export var ACCELERATION: float = 0.01
-#@export var SPEEDPOWER: float = 2
-@export_range(0,1) var Rotation: float = 1
-@export_range(0,1) var AttackAngle: float = 1
+@export var SPEEDPOWER: float = 2
 @export_category(\"HookPhysics\")
 @export var reelingMaxForce: float  = 100
 @export_range(0,1) var reelingLerp: float  = 0.75
@@ -24,11 +22,9 @@ var CLICKPOSITION: Vector2
 var tempD: Dictionary
 var RelativeHookAngle : Vector2
 var AcSpeed : float
-var ObjectiveDirection : Vector2
+
 func _ready() -> void:
 	RelativeHookAngle = Vector2.RIGHT
-	velocity = Vector2.RIGHT
-	ObjectiveDirection  = RelativeHookAngle.normalized()
 	pass # Replace with function body.
 	
 
@@ -37,23 +33,16 @@ func _physics_process(_delta: float) -> void:
 	ConstantSpeed()
 	if TRYHOOK:
 		HookLogic()
-		pass
-	if !tempD.is_empty():
-		ObjectiveDirection = lerp(RelativeHookAngle.normalized(),(tempD.get(\"collider\").position - position).normalized(),AttackAngle)
-		#ObjectiveDirection = lerp(velocity.normalized(),(tempD.get(\"collider\").position - position).normalized(),AttackAngle)
-	else:
-		#ObjectiveDirection = velocity
-		pass
+		queue_redraw()
 	
 	transform = transform.orthonormalized()
 	move_and_slide()
-	queue_redraw()
-	#look_at(position+velocity)
-	look_at(lerp(transform.x.normalized(), ObjectiveDirection, Rotation) + position)
+	look_at(position+velocity)
 	
 #Handles touch input
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventScreenTouch:
+		
 		TRYHOOK = event.pressed
 		CLICKPOSITION = event.position
 
@@ -73,21 +62,16 @@ func HookLogic() -> void:
 		RelativeHookAngle = vPerpendicularVelocity
 		#Cast velocity to perpendicular force
 		var PerpendicularForce : Vector2 = lerp(velocity, vPerpendicularVelocity,RopeTension)
-		#PerpendicularForce -= velocity
-		#var PerpendicularForce : Vector2 = lerp(vPerpendicularVelocity, velocity.length() * vPerpendicularVelocity.normalized(),RopeTension)
-		#PerpendicularForce -= velocity
-		velocity = PerpendicularForce
-		#print(\"PerpendicularForce: \", PerpendicularForce)
+		PerpendicularForce -= velocity
+		velocity += PerpendicularForce
 		
 		#Grapple force
 		var TargetSpeed : Vector2 = reelingAcceleration * HookDif - velocity
 		TargetSpeed += ((HookDif.length() - minDistanceRope) * HookDif.normalized()) * DistanceStrength
 		var Movement : Vector2 = lerp(velocity, TargetSpeed, reelingLerp)
-		Movement -= velocity
 		Movement = clamp(Movement.length(),0,reelingMaxForce) * Movement.normalized()
 		velocity += Movement
-		#print(\"Movement: \", Movement)
-		
+		#print(\"HookDif: \", HookDif, \"vPerpendicular: \", vPerpendicular, \"vPerpendicularVelocity: \", vPerpendicularVelocity,  \"RelativeHookAngle: \", RelativeHookAngle)
 		#Vector2 TargetSpeed = 
 	else:
 		TRYHOOK = false
@@ -96,26 +80,16 @@ func HookLogic() -> void:
 	
 
 func ConstantSpeed() -> void:
-	#var SPEEDFORCE : Vector2 = ((MAXSPEED * RelativeHookAngle.normalized() - velocity) * ACCELERATION)
-	#SPEEDFORCE = SPEEDFORCE.length() ** SPEEDPOWER * SPEEDFORCE.normalized()  #+ velocity.length()
-	#velocity +=  SPEEDFORCE 
-	#var SPEEDFORCE : Vector2 = ((MAXSPEED * transform.x.normalized() - velocity) * ACCELERATION)
-	#SPEEDFORCE = SPEEDFORCE.length() ** SPEEDPOWER * transform.x.normalized()  #+ velocity.length()
-	#velocity +=  SPEEDFORCE 
-	var SPEEDFORCE : float = ((MAXSPEED - velocity.length()) * ACCELERATION) 
-	velocity +=  SPEEDFORCE * transform.x.normalized()
-	#print(SPEEDFORCE)
-#velocity = Vector2(SPEEDFORCE*cos(RelativeHookAngle),SPEEDFORCE* sin(RelativeHookAngle))
-#velocity = (velocity.length() + SPEEDFORCE) * lerp(velocity.normalized(),RelativeHookAngle.normalized(),RopeTension
-	
+	var SPEEDFORCE : float = ((MAXSPEED - velocity.length()) * ACCELERATION) ** SPEEDPOWER #+ velocity.length()
+	#velocity = Vector2(SPEEDFORCE*cos(RelativeHookAngle),SPEEDFORCE* sin(RelativeHookAngle))
+	#velocity = (velocity.length() + SPEEDFORCE) * lerp(velocity.normalized(),RelativeHookAngle.normalized(),RopeTension
+	velocity +=  SPEEDFORCE * RelativeHookAngle.normalized()
+
 
 func _draw() -> void:
-	draw_line(Vector2.ZERO, velocity.length() * Vector2.RIGHT,Color.WHITE,-1)
-	#if !tempD.is_empty():
-		#
+	if !tempD.is_empty():
+		draw_line(Vector2.ZERO, tempD.get(\"collider\").position - position,Color.WHITE,-1)
 		#print(global_position,tempD.get(\"collider\").position)
-	#else:
-		#draw_line(Vector2.ZERO, Vector2.ZERO,Color.WHITE,-1)
 "
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_fbmn4"]
@@ -125,7 +99,8 @@ radius = 67.42
 resource_name = "GraphicsLogic"
 script/source = "extends Sprite2D
 
-#func _physics_process(_delta: float) -> void:
+func _physics_process(_delta: float) -> void:
+	pass
 	#look_at(position + get_parent().velocity)
 "
 

@@ -72,12 +72,11 @@ func HookLogic() -> void:
 		var vPerpendicularVelocity : Vector2 = (velocity.dot(vPerpendicular)/vPerpendicular.length_squared())* vPerpendicular
 		RelativeHookAngle = vPerpendicularVelocity
 		#Cast velocity to perpendicular force
-		var PerpendicularForce : Vector2 = lerp(velocity, vPerpendicularVelocity,RopeTension)
-		#PerpendicularForce -= velocity
-		#var PerpendicularForce : Vector2 = lerp(vPerpendicularVelocity, velocity.length() * vPerpendicularVelocity.normalized(),RopeTension)
-		#PerpendicularForce -= velocity
-		velocity = PerpendicularForce
-		#print(\"PerpendicularForce: \", PerpendicularForce)
+		#var PerpendicularForce : Vector2 = lerp(velocity, vPerpendicularVelocity,RopeTension)
+		var PerpendicularForce : Vector2 = lerp(vPerpendicularVelocity, velocity.length() * vPerpendicularVelocity.normalized(),RopeTension)
+		PerpendicularForce -= velocity
+		velocity += PerpendicularForce
+		print(\"PerpendicularForce: \", PerpendicularForce)
 		
 		#Grapple force
 		var TargetSpeed : Vector2 = reelingAcceleration * HookDif - velocity
@@ -86,7 +85,7 @@ func HookLogic() -> void:
 		Movement -= velocity
 		Movement = clamp(Movement.length(),0,reelingMaxForce) * Movement.normalized()
 		velocity += Movement
-		#print(\"Movement: \", Movement)
+		print(\"Movement: \", Movement)
 		
 		#Vector2 TargetSpeed = 
 	else:

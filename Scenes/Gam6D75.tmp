@@ -6,8 +6,6 @@
 
 [node name="Node2D" type="Node2D"]
 script = ExtResource("1_45rtu")
-player_prefab = ExtResource("2_7q0kk")
-follow_camera = false
 
 [node name="Asteroid" parent="." instance=ExtResource("3_8cg06")]
 position = Vector2(173, 109)
@@ -24,27 +22,11 @@ position = Vector2(939, 497)
 [node name="Asteroid5" parent="." instance=ExtResource("3_8cg06")]
 position = Vector2(580, 303)
 
-[node name="SpawnPoints" type="Node2D" parent="."]
-
-[node name="0" type="Node2D" parent="SpawnPoints" groups=["SpawnPoint"]]
-position = Vector2(111, 330)
-
-[node name="1" type="Node2D" parent="SpawnPoints" groups=["SpawnPoint"]]
-position = Vector2(376, 563)
-
-[node name="2" type="Node2D" parent="SpawnPoints" groups=["SpawnPoint"]]
-position = Vector2(703, 569)
-
-[node name="3" type="Node2D" parent="SpawnPoints" groups=["SpawnPoint"]]
-position = Vector2(1057, 365)
-
-[node name="Camera2D" type="Camera2D" parent="."]
 [node name="Player" parent="." instance=ExtResource("2_7q0kk")]
 position = Vector2(219, 297)
-MAXSPEED = 600.0
 Rotation = 0.1
 AttackAngle = 0.75
+reelingMaxForce = 0.0
 reelingLerp = 0.0
-reelingAcceleration = 0.1
 minDistanceRope = 12.0
-RopeTension = 0.148
+RopeTension = 0.0
