@@ -1,28 +1,88 @@
-[gd_scene load_steps=5 format=3 uid="uid://deq633jirwd41"]
+[gd_scene load_steps=4 format=3 uid="uid://deq633jirwd41"]
 
-[ext_resource type="Script" path="res://Prefabs/player.gd" id="1_x8c8j"]
 [ext_resource type="Texture2D" uid="uid://b8433osba5qn4" path="res://icon.svg" id="1_xosu4"]
+
+[sub_resource type="GDScript" id="GDScript_v5a8b"]
+script/source = "extends CharacterBody2D
+
+@export var MAXSPEED: float = 300
+@export var ACCELERATION: float = 0.01
+@export var SPEEDPOWER: float = 2
+@export var RotationWeight: float = 0.75
+
+var TRYHOOK : bool = false
+var CLICKPOSITION: Vector2
+var tempD: Dictionary
+var RelativeHookAngle : Vector2
+var AcSpeed : float
+
+func _ready() -> void:
+	RelativeHookAngle = Vector2.RIGHT
+	pass # Replace with function body.
+	
+func _process(delta: float) -> void:
+	pass
+
+func _physics_process(delta: float) -> void:
+	ConstantSpeed()
+	if TRYHOOK:
+		HookLogic()
+	
+	
+	transform = transform.orthonormalized()
+	move_and_slide()
+	
+#Handles touch input
+func _unhandled_input(event: InputEvent) -> void:
+	if event is InputEventScreenTouch:
+		
+		TRYHOOK = event.pressed
+		CLICKPOSITION = event.position
+
+#Handles Hook Physics
+func HookLogic() -> void:
+#region RaycastToTouch
+	var space_state: PhysicsDirectSpaceState2D = get_world_2d().direct_space_state
+	var query: PhysicsRayQueryParameters2D = PhysicsRayQueryParameters2D.create(global_position, CLICKPOSITION)
+	var result: Dictionary = space_state.intersect_ray(query)
+	tempD = result
+#endregion
+	
+	if !result.is_empty():
+		queue_redraw()
+		var HookDif : Vector2 = tempD.get(\"collider\").position - position
+		var vPerpendicular : Vector2  = Vector2(-HookDif.y,HookDif.x).normalized()
+		var vPerpendicularVelocity : Vector2  = (velocity.dot(vPerpendicular)/vPerpendicular.length_squared())* vPerpendicular
+		RelativeHookAngle = vPerpendicularVelocity
+		#print(\"HookDif: \", HookDif, \"vPerpendicular: \", vPerpendicular, \"vPerpendicularVelocity: \", vPerpendicularVelocity,  \"RelativeHookAngle: \", RelativeHookAngle)
+		#Vector2 TargetSpeed = 
+	else:
+		TRYHOOK = false
+		RelativeHookAngle = velocity.normalized() 
+	
+
+func ConstantSpeed() -> void:
+	var SPEEDFORCE : float = ((MAXSPEED - velocity.length()) * ACCELERATION) ** SPEEDPOWER #+ velocity.length()
+	#velocity = Vector2(SPEEDFORCE*cos(RelativeHookAngle),SPEEDFORCE* sin(RelativeHookAngle))
+	velocity = (velocity.length() + SPEEDFORCE) * lerp(velocity.normalized(),RelativeHookAngle.normalized(),RotationWeight)
+	look_at(position+velocity)
+
+
+func _draw() -> void:
+	if !tempD.is_empty():
+		draw_line(Vector2.ZERO, transform.x,Color.WHITE,-1)
+		#print(global_position,tempD.get(\"collider\").position)
+"
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_fbmn4"]
 radius = 67.42
 
-[sub_resource type="SceneReplicationConfig" id="SceneReplicationConfig_2ptmi"]
-properties/0/path = NodePath(".:position")
-properties/0/spawn = true
-properties/0/replication_mode = 2
-properties/1/path = NodePath(".:rotation")
-properties/1/spawn = true
-properties/1/replication_mode = 2
-
 [node name="Player" type="CharacterBody2D"]
 scale = Vector2(0.3, 0.3)
-script = ExtResource("1_x8c8j")
+script = SubResource("GDScript_v5a8b")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 shape = SubResource("CircleShape2D_fbmn4")
 
 [node name="Sprite2D" type="Sprite2D" parent="."]
 texture = ExtResource("1_xosu4")
-
-[node name="MultiplayerSynchronizer" type="MultiplayerSynchronizer" parent="."]
-replication_config = SubResource("SceneReplicationConfig_2ptmi")
