@@ -66,7 +66,7 @@ func _on_single_player_button_down() -> void:
 	create_server(should_log)
 	PlayerData.create_player_data(multiplayer.get_unique_id(), $LineEdit.text)
 	PlayerData.set_gamestate(1, PlayerData.GAMESTATE.PLAYING)
-	GameManager.load_scene(\"res://Scenes/game_play_test.tscn\")
+	GameManager.load_scene(\"res://Scenes/GamePlayTest.tscn\")
 
 func create_server(log_active : bool = false) -> void :
 	peer = ENetMultiplayerPeer.new()
