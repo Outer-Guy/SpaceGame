@@ -36,3 +36,8 @@ position = Vector2(703, 569)
 
 [node name="3" type="Node2D" parent="SpawnPoints" groups=["SpawnPoint"]]
 position = Vector2(1057, 365)
+
+[node name="Player" parent="." instance=ExtResource("2_7q0kk")]
+position = Vector2(99, 336)
+
+[node name="Camera2D" type="Camera2D" parent="."]
