@@ -11,9 +11,11 @@ var tempD: Dictionary
 var RelativeHookAngle : Vector2
 var AcSpeed : float
 
+var assigned_id : int 
+
 func _ready() -> void:
-	pass # Replace with function body.
-	
+	$MultiplayerSynchronizer.set_multiplayer_authority(assigned_id)
+
 func _process(delta: float) -> void:
 	pass
 
@@ -28,6 +30,7 @@ func _physics_process(delta: float) -> void:
 	
 #Handles touch input
 func _unhandled_input(event: InputEvent) -> void:
+	if !$MultiplayerSynchronizer.is_multiplayer_authority() : return
 	if event is InputEventScreenTouch:
 		
 		TRYHOOK = event.pressed
@@ -57,7 +60,6 @@ func BasicForce() -> void:
 	#velocity = Vector2(SPEEDFORCE*cos(RelativeHookAngle),SPEEDFORCE* sin(RelativeHookAngle))
 	velocity = (velocity.length() + SPEEDFORCE) * lerp(velocity.normalized(),Vector2(-RelativeHookAngle.y,RelativeHookAngle.x).normalized(),RotationWeight)
 	look_at(position+velocity)
-	print(velocity)
 
 func _draw() -> void:
 	if !tempD.is_empty():
