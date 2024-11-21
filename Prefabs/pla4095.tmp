@@ -56,8 +56,6 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventScreenTouch:
 		TRYHOOK = event.pressed
 		CLICKPOSITION = event.position
-		if !event.pressed:
-			tempD.clear()
 
 #Handles Hook Physics
 func HookLogic() -> void:
@@ -95,7 +93,7 @@ func HookLogic() -> void:
 		#print(\"Movement: \", Movement)
 		
 		var TargetSpeed : float = reelingAcceleration + (HookDif.length() - minDistanceRope) * DistanceStrength
-		var Movement : float = lerpf(0, TargetSpeed, reelingLerp)
+		var Movement : float = lerpf(velocity.length(), TargetSpeed, reelingLerp)
 		#Movement -= velocity
 		Movement = clampf(Movement, 0, reelingMaxForce)
 		velocity += Movement * HookDif.normalized()
