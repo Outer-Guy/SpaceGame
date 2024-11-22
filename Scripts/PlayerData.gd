@@ -162,3 +162,13 @@ func set_player_data(serialized_data : Array) -> void :
 	# serialized_data[0] has a reference to the id sent
 	if all_data.has(serialized_data[0]) : all_data.erase(serialized_data[0])
 	all_data[serialized_data[0]] = PlayerInfo.deserialize(serialized_data)
+
+# ---------------- EXTRA ------------------ 
+
+func create_empty_server() -> void :
+	var peer : ENetMultiplayerPeer = ENetMultiplayerPeer.new()
+	var error : Error = peer.create_server(4444, 1)
+	if error : get_tree().quit()
+	multiplayer.set_multiplayer_peer(peer)
+	create_player_data(1, "debugPlayer")
+	set_gamestate(1, PlayerData.GAMESTATE.PLAYING)

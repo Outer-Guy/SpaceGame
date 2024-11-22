@@ -76,7 +76,6 @@ func create_server(log_active : bool = false) -> void :
 		if log_active : printerr(error)
 		return
 	peer.get_host().compress(compression_type)
-	
 	multiplayer.set_multiplayer_peer(peer)
 
 func create_client(log_active : bool = false) -> void :

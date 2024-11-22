@@ -4,7 +4,7 @@ extends Node2D
 @export var follow_camera : bool = true
 
 func _ready() -> void:
-	if multiplayer.get_peers().is_empty() : create_empty_server()
+	if PlayerData.all_data.is_empty() : PlayerData.create_empty_server()
 	if !follow_camera : $"Camera2D".anchor_mode = Camera2D.AnchorMode.ANCHOR_MODE_FIXED_TOP_LEFT
 	
 	var index : int = 0
@@ -16,11 +16,3 @@ func _ready() -> void:
 		if follow_camera && data.id == PlayerData.local.id : $"Camera2D".reparent(new_player)
 		new_player.global_position = spawnPoints[index].global_position
 		index += 1
-
-func create_empty_server() -> void :
-	var peer : ENetMultiplayerPeer = ENetMultiplayerPeer.new()
-	var error : Error = peer.create_server(4444, 1)
-	if error : get_tree().quit()
-	multiplayer.set_multiplayer_peer(peer)
-	PlayerData.create_player_data(1, "debugPlayer")
-	PlayerData.set_gamestate(1, PlayerData.GAMESTATE.PLAYING)
