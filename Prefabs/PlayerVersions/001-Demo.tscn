@@ -1,0 +1,157 @@
+[gd_scene load_steps=5 format=3 uid="uid://ctwp3thgeuin1"]
+
+[ext_resource type="Texture2D" uid="uid://b8433osba5qn4" path="res://icon.svg" id="1_aprbl"]
+
+[sub_resource type="GDScript" id="GDScript_v5a8b"]
+script/source = "extends CharacterBody2D
+
+@export_category(\"Movement\")
+@export var MAXSPEED: float = 300
+@export var ACCELERATION: float = 0.01
+#@export var SPEEDPOWER: float = 2
+@export_range(0,1) var Rotation: float = 1
+@export_range(0,1) var AttackAngle: float = 1
+@export_category(\"HookPhysics\")
+@export var reelingMaxForce: float  = 100
+@export_range(0,1) var reelingLerp: float  = 0.75
+@export var reelingAcceleration: float  = 0.75
+@export var DistanceStrength: float  = 1
+@export var minDistanceRope: float  = 4
+@export_range(0,1) var RopeTension: float  = 0.75
+
+var TRYHOOK : bool = false
+var CLICKPOSITION: Vector2
+var tempD: Dictionary
+var RelativeHookAngle : Vector2
+var AcSpeed : float
+var ObjectiveDirection : Vector2
+func _ready() -> void:
+	RelativeHookAngle = Vector2.RIGHT
+	velocity = Vector2.RIGHT
+	ObjectiveDirection  = RelativeHookAngle.normalized()
+	pass # Replace with function body.
+	
+
+
+func _physics_process(_delta: float) -> void:
+	ConstantSpeed()
+	if TRYHOOK:
+		HookLogic()
+		pass
+	if !tempD.is_empty():
+		ObjectiveDirection = lerp(RelativeHookAngle.normalized(),(tempD.get(\"collider\").position - position).normalized(),AttackAngle)
+		#ObjectiveDirection = lerp(velocity.normalized(),(tempD.get(\"collider\").position - position).normalized(),AttackAngle)
+	else:
+		#ObjectiveDirection = velocity
+		pass
+	
+	transform = transform.orthonormalized()
+	move_and_slide()
+	queue_redraw()
+	#look_at(position+velocity)
+	look_at(lerp(transform.x.normalized(), ObjectiveDirection, Rotation) + position)
+	
+#Handles touch input
+func _unhandled_input(event: InputEvent) -> void:
+	if event is InputEventScreenTouch:
+		TRYHOOK = event.pressed
+		CLICKPOSITION = event.position
+		if !event.pressed:
+			tempD.clear()
+
+#Handles Hook Physics
+func HookLogic() -> void:
+#region RaycastToTouch
+	var space_state: PhysicsDirectSpaceState2D = get_world_2d().direct_space_state
+	var query: PhysicsRayQueryParameters2D = PhysicsRayQueryParameters2D.create(global_position, CLICKPOSITION)
+	var result: Dictionary = space_state.intersect_ray(query)
+	tempD = result
+#endregion
+	
+	if !result.is_empty():
+	#region RelativeHookAngle
+		var HookDif : Vector2 = tempD.get(\"collider\").position - position
+		var vPerpendicular : Vector2  = Vector2(-HookDif.y,HookDif.x).normalized()
+		var vPerpendicularVelocity : Vector2 = (velocity.dot(vPerpendicular)/vPerpendicular.length_squared())* vPerpendicular
+		RelativeHookAngle = vPerpendicularVelocity
+		#endregion
+		
+		#Cast velocity to perpendicular force
+		var PerpendicularForce : Vector2 = lerp(velocity, vPerpendicularVelocity,RopeTension)
+		#PerpendicularForce -= velocity
+		#var PerpendicularForce : Vector2 = lerp(vPerpendicularVelocity, velocity.length() * vPerpendicularVelocity.normalized(),RopeTension)
+		#PerpendicularForce -= velocity
+		velocity = PerpendicularForce
+		#print(\"PerpendicularForce: \", PerpendicularForce)
+		
+		
+	#region Grapple Force
+		#var TargetSpeed : Vector2 = reelingAcceleration * HookDif - velocity
+		#TargetSpeed += ((HookDif.length() - minDistanceRope) * HookDif.normalized()) * DistanceStrength
+		#var Movement : Vector2 = lerp(velocity, TargetSpeed, reelingLerp)
+		#Movement -= velocity
+		#Movement = clamp(Movement.length(),0,reelingMaxForce) * Movement.normalized()
+		#velocity += Movement
+		#print(\"Movement: \", Movement)
+		
+		var TargetSpeed : float = reelingAcceleration + (HookDif.length() - minDistanceRope) * DistanceStrength
+		var Movement : float = lerpf(0, TargetSpeed, reelingLerp)
+		#Movement -= velocity
+		Movement = clampf(Movement, 0, reelingMaxForce)
+		velocity += Movement * HookDif.normalized()
+		print(\"Movement: \", Movement)
+		#endregion
+		
+		#Vector2 TargetSpeed = 
+	else:
+		TRYHOOK = false
+		RelativeHookAngle = velocity.normalized() 
+		
+	
+
+func ConstantSpeed() -> void:
+	#var SPEEDFORCE : Vector2 = ((MAXSPEED * RelativeHookAngle.normalized() - velocity) * ACCELERATION)
+	#SPEEDFORCE = SPEEDFORCE.length() ** SPEEDPOWER * SPEEDFORCE.normalized()  #+ velocity.length()
+	#velocity +=  SPEEDFORCE 
+	#var SPEEDFORCE : Vector2 = ((MAXSPEED * transform.x.normalized() - velocity) * ACCELERATION)
+	#SPEEDFORCE = SPEEDFORCE.length() ** SPEEDPOWER * transform.x.normalized()  #+ velocity.length()
+	#velocity +=  SPEEDFORCE 
+	var SPEEDFORCE : float = ((MAXSPEED - velocity.length()) * ACCELERATION) 
+	velocity +=  SPEEDFORCE * transform.x.normalized()
+	#print(SPEEDFORCE)
+#velocity = Vector2(SPEEDFORCE*cos(RelativeHookAngle),SPEEDFORCE* sin(RelativeHookAngle))
+#velocity = (velocity.length() + SPEEDFORCE) * lerp(velocity.normalized(),RelativeHookAngle.normalized(),RopeTension
+	
+
+func _draw() -> void:
+	draw_line(Vector2.ZERO, velocity.length() * Vector2.RIGHT,Color.WHITE,-1)
+	#if !tempD.is_empty():
+		#
+		#print(global_position,tempD.get(\"collider\").position)
+	#else:
+		#draw_line(Vector2.ZERO, Vector2.ZERO,Color.WHITE,-1)
+"
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_fbmn4"]
+radius = 67.42
+
+[sub_resource type="GDScript" id="GDScript_8cksp"]
+resource_name = "GraphicsLogic"
+script/source = "extends Sprite2D
+
+#func _physics_process(_delta: float) -> void:
+	#look_at(position + get_parent().velocity)
+"
+
+[node name="Player" type="CharacterBody2D"]
+script = SubResource("GDScript_v5a8b")
+RopeTension = 0.121
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+scale = Vector2(0.3, 0.3)
+shape = SubResource("CircleShape2D_fbmn4")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+scale = Vector2(0.3, 0.3)
+texture = ExtResource("1_aprbl")
+script = SubResource("GDScript_8cksp")
