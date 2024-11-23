@@ -25,7 +25,7 @@ var tempD: Dictionary
 var RelativeHookAngle : Vector2
 var AcSpeed : float
 var ObjectiveDirection : Vector2
-
+var RotationSpeed: float
 var assigned_id : int
 
 @export var activate_logs : bool = false 
@@ -82,12 +82,12 @@ func HookLogic() -> void:
 	#region RelativeHookAngle
 		var HookDif : Vector2 = tempD.get(\"collider\").position - position
 		var vPerpendicular : Vector2  = Vector2(-HookDif.y,HookDif.x).normalized()
-		var vPerpendicularVelocity : Vector2 = (velocity.dot(vPerpendicular)/vPerpendicular.length_squared())* vPerpendicular
-		RelativeHookAngle = vPerpendicularVelocity
+		#var vPerpendicularVelocity : Vector2 = (velocity.dot(vPerpendicular)/vPerpendicular.length_squared())* vPerpendicular
+		RelativeHookAngle = velocity.project(vPerpendicular)
 		#endregion
 		
 		#Cast velocity to perpendicular force
-		var PerpendicularForce : Vector2 = lerp(velocity, vPerpendicularVelocity,RopeTension)
+		var PerpendicularForce : Vector2 = lerp(velocity, RelativeHookAngle,RopeTension)
 		#PerpendicularForce -= velocity
 		#var PerpendicularForce : Vector2 = lerp(vPerpendicularVelocity, velocity.length() * vPerpendicularVelocity.normalized(),RopeTension)
 		#PerpendicularForce -= velocity
@@ -126,7 +126,7 @@ func ConstantSpeed() -> void:
 	#var SPEEDFORCE : Vector2 = ((MAXSPEED * transform.x.normalized() - velocity) * ACCELERATION)
 	#SPEEDFORCE = SPEEDFORCE.length() ** SPEEDPOWER * transform.x.normalized()  #+ velocity.length()
 	#velocity +=  SPEEDFORCE 
-	var SPEEDFORCE : float = ((MAXSPEED - velocity.length()) * ACCELERATION) 
+	var SPEEDFORCE : float = ((MAXSPEED - velocity.project(transform.x).length()) * ACCELERATION) 
 	velocity +=  SPEEDFORCE * transform.x.normalized()
 	#print(SPEEDFORCE)
 #velocity = Vector2(SPEEDFORCE*cos(RelativeHookAngle),SPEEDFORCE* sin(RelativeHookAngle))
