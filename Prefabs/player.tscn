@@ -9,32 +9,35 @@ script/source = "extends CharacterBody2D
 @export var MAXSPEED: float = 300
 @export var ACCELERATION: float = 0.01
 #@export var SPEEDPOWER: float = 2
-@export_range(0,1) var Rotation: float = 1
-@export_range(0,1) var AttackAngle: float = 1
+@export_range(0,0.5) var Rotation: float = 1
+@export_range(0,2) var AttackAngle: float = 1
+@export_range(0,0.5) var RecenterStrenght: float = 1
 @export_category(\"HookPhysics\")
-@export var reelingMaxForce: float  = 100
-@export_range(0,1) var reelingLerp: float  = 0.75
-@export var reelingAcceleration: float  = 0.75
-@export var DistanceStrength: float  = 1
-@export var minDistanceRope: float  = 4
+@export_range(0,1000) var reelingMaxForce: float  = 100
+@export_range(0,0.5) var reelingLerp: float  = 0.75
+@export var reelingAcceleration: float  = 0.01
+@export_range(0,40) var DistanceStrength: int  = 1
+@export_range(0,1000,10) var minDistanceRope: int  = 40
 @export_range(0,1) var RopeTension: float  = 0.75
+@export_range(0,0.2) var RopeDampening: float  = 0.75
 
 var TRYHOOK : bool = false
 var CLICKPOSITION: Vector2
 var tempD: Dictionary
-var RelativeHookAngle : Vector2
+var vPerpendicularVelocity : Vector2
 var AcSpeed : float
 var ObjectiveDirection : Vector2
 var RotationSpeed: float
 var assigned_id : int
+var HookDif : Vector2
 
 @export var activate_logs : bool = false 
 
 func _ready() -> void:
 	$MultiplayerSynchronizer.set_multiplayer_authority(assigned_id)
-	RelativeHookAngle = Vector2.RIGHT
+	vPerpendicularVelocity = Vector2.RIGHT
 	velocity = Vector2.RIGHT
-	ObjectiveDirection  = RelativeHookAngle.normalized()
+	ObjectiveDirection  = vPerpendicularVelocity.normalized()
 	pass # Replace with function body.
 	
 
@@ -47,10 +50,10 @@ func _physics_process(_delta: float) -> void:
 		HookLogic()
 		pass
 	if !tempD.is_empty():
-		ObjectiveDirection = lerp(RelativeHookAngle.normalized(),(tempD.get(\"collider\").position - position).normalized(),AttackAngle)
+		ObjectiveDirection = lerp(vPerpendicularVelocity.normalized(),(tempD.get(\"collider\").position - position).normalized(),AttackAngle)
 		#ObjectiveDirection = lerp(velocity.normalized(),(tempD.get(\"collider\").position - position).normalized(),AttackAngle)
 	else:
-		#ObjectiveDirection = velocity
+		ObjectiveDirection = lerp(transform.x.normalized(), velocity.normalized(), RecenterStrenght)
 		pass
 	
 	transform = transform.orthonormalized()
@@ -58,6 +61,7 @@ func _physics_process(_delta: float) -> void:
 	queue_redraw()
 	#look_at(position+velocity)
 	look_at(lerp(transform.x.normalized(), ObjectiveDirection, Rotation) + position)
+	
 	
 #Handles touch input
 func _unhandled_input(event: InputEvent) -> void:
@@ -80,18 +84,18 @@ func HookLogic() -> void:
 	
 	if !result.is_empty():
 	#region RelativeHookAngle
-		var HookDif : Vector2 = tempD.get(\"collider\").position - position
+		HookDif = tempD.get(\"collider\").position - position
 		var vPerpendicular : Vector2  = Vector2(-HookDif.y,HookDif.x).normalized()
 		#var vPerpendicularVelocity : Vector2 = (velocity.dot(vPerpendicular)/vPerpendicular.length_squared())* vPerpendicular
-		RelativeHookAngle = velocity.project(vPerpendicular)
+		vPerpendicularVelocity = velocity.project(vPerpendicular)
 		#endregion
 		
 		#Cast velocity to perpendicular force
-		var PerpendicularForce : Vector2 = lerp(velocity, RelativeHookAngle,RopeTension)
-		#PerpendicularForce -= velocity
+		var PerpendicularForce : Vector2 = lerp(velocity, vPerpendicularVelocity, RopeTension) #/ (HookDif.length()/1000))
+		#PerpendicularForce -= velocity * RopeDampening
 		#var PerpendicularForce : Vector2 = lerp(vPerpendicularVelocity, velocity.length() * vPerpendicularVelocity.normalized(),RopeTension)
 		#PerpendicularForce -= velocity
-		velocity = PerpendicularForce
+		velocity = PerpendicularForce * (1-RopeDampening)
 		#print(\"PerpendicularForce: \", PerpendicularForce)
 		
 		
@@ -104,8 +108,8 @@ func HookLogic() -> void:
 		#velocity += Movement
 		#print(\"Movement: \", Movement)
 		
-		var TargetSpeed : float = reelingAcceleration + (HookDif.length() - minDistanceRope) * DistanceStrength
-		var Movement : float = lerpf(0, TargetSpeed, reelingLerp)
+		var TargetSpeed : float = reelingAcceleration + (HookDif.length() - minDistanceRope) ** DistanceStrength
+		var Movement : float = lerpf(0, TargetSpeed, reelingLerp )
 		#Movement -= velocity
 		Movement = clampf(Movement, 0, reelingMaxForce)
 		velocity += Movement * HookDif.normalized()
@@ -115,22 +119,22 @@ func HookLogic() -> void:
 		#Vector2 TargetSpeed = 
 	else:
 		TRYHOOK = false
-		RelativeHookAngle = velocity.normalized() 
+		vPerpendicularVelocity = velocity.normalized() 
 		
 	
 
 func ConstantSpeed() -> void:
-	#var SPEEDFORCE : Vector2 = ((MAXSPEED * RelativeHookAngle.normalized() - velocity) * ACCELERATION)
+	#var SPEEDFORCE : Vector2 = ((MAXSPEED * vPerpendicularVelocity.normalized() - velocity) * ACCELERATION)
 	#SPEEDFORCE = SPEEDFORCE.length() ** SPEEDPOWER * SPEEDFORCE.normalized()  #+ velocity.length()
 	#velocity +=  SPEEDFORCE 
 	#var SPEEDFORCE : Vector2 = ((MAXSPEED * transform.x.normalized() - velocity) * ACCELERATION)
 	#SPEEDFORCE = SPEEDFORCE.length() ** SPEEDPOWER * transform.x.normalized()  #+ velocity.length()
 	#velocity +=  SPEEDFORCE 
-	var SPEEDFORCE : float = ((MAXSPEED - velocity.project(transform.x).length()) * ACCELERATION) 
+	var SPEEDFORCE : float = absf((MAXSPEED - velocity.project(transform.x).length()) * ACCELERATION) 
 	velocity +=  SPEEDFORCE * transform.x.normalized()
 	#print(SPEEDFORCE)
-#velocity = Vector2(SPEEDFORCE*cos(RelativeHookAngle),SPEEDFORCE* sin(RelativeHookAngle))
-#velocity = (velocity.length() + SPEEDFORCE) * lerp(velocity.normalized(),RelativeHookAngle.normalized(),RopeTension
+#velocity = Vector2(SPEEDFORCE*cos(vPerpendicularVelocity),SPEEDFORCE* sin(vPerpendicularVelocity))
+#velocity = (velocity.length() + SPEEDFORCE) * lerp(velocity.normalized(),vPerpendicularVelocity.normalized(),RopeTension
 	
 
 func _draw() -> void:
@@ -163,7 +167,15 @@ properties/1/replication_mode = 1
 
 [node name="Player" type="CharacterBody2D"]
 script = SubResource("GDScript_v5a8b")
-RopeTension = 0.121
+Rotation = 0.065
+AttackAngle = 0.75
+RecenterStrenght = 0.25
+reelingLerp = 0.5
+reelingAcceleration = 1.0
+DistanceStrength = 4
+minDistanceRope = 50
+RopeTension = 0.097
+RopeDampening = 0.0
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 scale = Vector2(0.3, 0.3)
