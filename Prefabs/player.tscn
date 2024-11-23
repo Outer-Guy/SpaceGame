@@ -10,7 +10,7 @@ script/source = "extends CharacterBody2D
 @export var ACCELERATION: float = 0.01
 #@export var SPEEDPOWER: float = 2
 @export_range(0,0.5) var Rotation: float = 1
-@export_range(0,2) var AttackAngle: float = 1
+@export_range(0,1) var AttackAngle: float = 1
 @export_range(0,0.5) var RecenterStrenght: float = 1
 @export_category(\"HookPhysics\")
 @export_range(0,1000) var reelingMaxForce: float  = 100
@@ -51,17 +51,18 @@ func _physics_process(_delta: float) -> void:
 		pass
 	if !tempD.is_empty():
 		ObjectiveDirection = lerp(vPerpendicularVelocity.normalized(),(tempD.get(\"collider\").position - position).normalized(),AttackAngle)
+		ObjectiveDirection = lerp(transform.x.normalized(), ObjectiveDirection, Rotation)
 		#ObjectiveDirection = lerp(velocity.normalized(),(tempD.get(\"collider\").position - position).normalized(),AttackAngle)
 	else:
 		ObjectiveDirection = lerp(transform.x.normalized(), velocity.normalized(), RecenterStrenght)
+		ObjectiveDirection = lerp(transform.x.normalized(), ObjectiveDirection, Rotation)
 		pass
 	
 	transform = transform.orthonormalized()
 	move_and_slide()
 	queue_redraw()
 	#look_at(position+velocity)
-	look_at(lerp(transform.x.normalized(), ObjectiveDirection, Rotation) + position)
-	
+	look_at(ObjectiveDirection + position)
 	
 #Handles touch input
 func _unhandled_input(event: InputEvent) -> void:
@@ -91,7 +92,8 @@ func HookLogic() -> void:
 		#endregion
 		
 		#Cast velocity to perpendicular force
-		var PerpendicularForce : Vector2 = lerp(velocity, vPerpendicularVelocity, RopeTension) #/ (HookDif.length()/1000))
+		var PerpendicularForce : Vector2 = lerp(velocity, vPerpendicularVelocity, RopeTension + pow(velocity.length()/HookDif.length(),0.25)/10 )
+		print(pow(velocity.length()/HookDif.length(),0.5)/10 )
 		#PerpendicularForce -= velocity * RopeDampening
 		#var PerpendicularForce : Vector2 = lerp(vPerpendicularVelocity, velocity.length() * vPerpendicularVelocity.normalized(),RopeTension)
 		#PerpendicularForce -= velocity
@@ -167,14 +169,14 @@ properties/1/replication_mode = 1
 
 [node name="Player" type="CharacterBody2D"]
 script = SubResource("GDScript_v5a8b")
-Rotation = 0.065
-AttackAngle = 0.75
-RecenterStrenght = 0.25
-reelingLerp = 0.5
-reelingAcceleration = 1.0
-DistanceStrength = 4
+Rotation = 0.5
+AttackAngle = 0.5
+RecenterStrenght = 0.5
+reelingLerp = 0.113
+reelingAcceleration = 0.1
+DistanceStrength = 6
 minDistanceRope = 50
-RopeTension = 0.097
+RopeTension = 0.0
 RopeDampening = 0.0
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
