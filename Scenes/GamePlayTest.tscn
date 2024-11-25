@@ -1,7 +1,7 @@
 [gd_scene load_steps=8 format=3 uid="uid://c1ia02k5bags2"]
 
 [ext_resource type="Script" path="res://Scenes/game_play_test.gd" id="1_45rtu"]
-[ext_resource type="PackedScene" uid="uid://deq633jirwd41" path="res://Prefabs/player.tscn" id="2_7q0kk"]
+[ext_resource type="PackedScene" uid="uid://ctwp3thgeuin1" path="res://Prefabs/PlayerVersions/001-Demo.tscn" id="2_yp1r0"]
 [ext_resource type="PackedScene" uid="uid://dvwb55aw2eyvw" path="res://Prefabs/Asteroid.tscn" id="3_8cg06"]
 
 [sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_3y52j"]
@@ -19,7 +19,7 @@ width = 261
 
 [node name="Node2D" type="Node2D"]
 script = ExtResource("1_45rtu")
-player_prefab = ExtResource("2_7q0kk")
+player_prefab = ExtResource("2_yp1r0")
 follow_camera = false
 
 [node name="GPUParticles2D" type="GPUParticles2D" parent="."]

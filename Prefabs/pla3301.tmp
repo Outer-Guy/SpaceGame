@@ -1,6 +1,6 @@
-[gd_scene load_steps=5 format=3 uid="uid://ctwp3thgeuin1"]
+[gd_scene load_steps=6 format=3 uid="uid://deq633jirwd41"]
 
-[ext_resource type="Texture2D" uid="uid://b8433osba5qn4" path="res://icon.svg" id="1_aprbl"]
+[ext_resource type="Texture2D" uid="uid://b8433osba5qn4" path="res://icon.svg" id="1_xosu4"]
 
 [sub_resource type="GDScript" id="GDScript_v5a8b"]
 script/source = "extends CharacterBody2D
@@ -25,9 +25,13 @@ var tempD: Dictionary
 var RelativeHookAngle : Vector2
 var AcSpeed : float
 var ObjectiveDirection : Vector2
+var RotationSpeed: float
 var assigned_id : int
 
+@export var activate_logs : bool = false 
+
 func _ready() -> void:
+	$MultiplayerSynchronizer.set_multiplayer_authority(assigned_id)
 	RelativeHookAngle = Vector2.RIGHT
 	velocity = Vector2.RIGHT
 	ObjectiveDirection  = RelativeHookAngle.normalized()
@@ -36,6 +40,8 @@ func _ready() -> void:
 
 
 func _physics_process(_delta: float) -> void:
+	if !$MultiplayerSynchronizer.is_multiplayer_authority() : return
+	
 	ConstantSpeed()
 	if TRYHOOK:
 		HookLogic()
@@ -51,10 +57,15 @@ func _physics_process(_delta: float) -> void:
 	move_and_slide()
 	queue_redraw()
 	#look_at(position+velocity)
-	look_at(lerp(transform.x.normalized(), ObjectiveDirection, Rotation) + position)
+	#RotationSpeed = transform.x.angle_to_point(lerp(transform.x.normalized(), ObjectiveDirection.normalized(), Rotation) + position)
+	RotationSpeed = transform.x.angle_to_point(transform.x.normalized()+Vector2.RIGHT)
+	print(RotationSpeed)
+	rotate(RotationSpeed)
 	
 #Handles touch input
 func _unhandled_input(event: InputEvent) -> void:
+	if !$MultiplayerSynchronizer.is_multiplayer_authority() : return
+	
 	if event is InputEventScreenTouch:
 		TRYHOOK = event.pressed
 		CLICKPOSITION = event.position
@@ -101,7 +112,7 @@ func HookLogic() -> void:
 		#Movement -= velocity
 		Movement = clampf(Movement, 0, reelingMaxForce)
 		velocity += Movement * HookDif.normalized()
-		print(\"Movement: \", Movement)
+		if activate_logs : print(\"Movement: \", Movement)
 		#endregion
 		
 		#Vector2 TargetSpeed = 
@@ -145,9 +156,20 @@ script/source = "extends Sprite2D
 	#look_at(position + get_parent().velocity)
 "
 
-[node name="Player" type="CharacterBody2D"]
+[sub_resource type="SceneReplicationConfig" id="SceneReplicationConfig_e8j5o"]
+properties/0/path = NodePath(".:position")
+properties/0/spawn = true
+properties/0/replication_mode = 1
+properties/1/path = NodePath(".:Rotation")
+properties/1/spawn = true
+properties/1/replication_mode = 1
+
+[node name="Player2" type="CharacterBody2D"]
 script = SubResource("GDScript_v5a8b")
-RopeTension = 0.121
+Rotation = 0.0
+AttackAngle = 0.411
+reelingLerp = 0.0
+RopeTension = 0.0
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 scale = Vector2(0.3, 0.3)
@@ -155,5 +177,8 @@ shape = SubResource("CircleShape2D_fbmn4")
 
 [node name="Sprite2D" type="Sprite2D" parent="."]
 scale = Vector2(0.3, 0.3)
-texture = ExtResource("1_aprbl")
+texture = ExtResource("1_xosu4")
 script = SubResource("GDScript_8cksp")
+
+[node name="MultiplayerSynchronizer" type="MultiplayerSynchronizer" parent="."]
+replication_config = SubResource("SceneReplicationConfig_e8j5o")
