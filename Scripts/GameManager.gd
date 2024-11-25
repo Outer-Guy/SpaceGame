@@ -1,5 +1,8 @@
 extends Node
 
+var port : int = 4444
+var address : String = "127.0.0.1"
+
 func _ready() -> void:
 	PlayerData.on_all_data_set.connect(PlayerData.log_all)
 

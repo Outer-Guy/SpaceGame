@@ -1,10 +1,10 @@
-[gd_scene load_steps=4 format=3 uid="uid://bi0m7wrpvd08l"]
+[gd_scene load_steps=5 format=3 uid="uid://bi0m7wrpvd08l"]
 
 [sub_resource type="GDScript" id="GDScript_ikndx"]
 resource_name = "MainMenu"
 script/source = "extends Control
 
-var address : String = \"127.0.0.1\"
+
 @export var port : int = 4444
 @export var max_players : int = 4
 @export var compression_type : ENetConnection.CompressionMode = ENetConnection.CompressionMode.COMPRESS_NONE
@@ -19,9 +19,20 @@ func _ready() -> void:
 	multiplayer.connected_to_server.connect(on_connected_to_server)
 	multiplayer.connection_failed.connect(on_connection_failed)
 	PlayerData.on_all_data_set.connect(handle_scene_transition)
+	GameManager.port = port
+	GameManager.address = get_local_ip()
+	
 
-func get_address() -> String:
-	return address + \":\" + str(port)
+func get_local_ip() -> String:
+	var ip : String = \"\"
+	for ipString : String in IP.get_local_addresses():
+		if \".\" in ipString and not ipString.begins_with(\"127.\") and not ipString.begins_with(\"169.254.\"):
+			if ipString.begins_with(\"192.168.\") or ipString.begins_with(\"10.\") or (ipString.begins_with(\"172.\") and int(ipString.split(\".\")[1]) >= 16 and int(ipString.split(\".\")[1]) <= 31):
+				ip = ipString
+				break
+	return ip
+
+
 
 # On every connection and disconnection, server and client
 func on_peer_connected(id : int) -> void:
@@ -32,12 +43,12 @@ func on_peer_disconnected(id : int) -> void:
 
 # On succesful or failed connection, only client
 func on_connected_to_server() -> void:
-	if should_log : print(\"Succesfull connection to \" + get_address())
+	if should_log : print(\"Succesfull connection to \" + GameManager.address)
 	
 	PlayerData.on_player_connected.rpc_id(1, multiplayer.get_unique_id(), $LineEdit.text)
 
 func on_connection_failed() -> void:
-	if should_log : print(\"Failed to connect to \" + get_address())
+	if should_log : print(\"Failed to connect to \" + GameManager.address)
 
 func handle_scene_transition() -> void :
 	PlayerData.set_gamestate.rpc(PlayerData.local.id, PlayerData.GAMESTATE.LOBBY)
@@ -85,16 +96,16 @@ func create_server(log_active : bool = false) -> void :
 func create_client(log_active : bool = false) -> void :
 	peer = ENetMultiplayerPeer.new()
 	
-	address = get_address_from_line()
+	var _address : String = get_address_from_line()
 	
-	var error : Error = peer.create_client(address, port)
+	var error : Error = peer.create_client(_address, port)
 	if error:
-		if log_active : print(\"Failed to connect to \" + address)
+		if log_active : print(\"Failed to connect to \" + _address)
 		return
 		
 	peer.get_host().compress(compression_type)
 	multiplayer.set_multiplayer_peer(peer)
-	if log_active : print(\"Connection sent to: \" + get_address())
+	if log_active : print(\"Connection sent to: \" + _address)
 
 func get_address_from_line() -> String :
 	if $ServerAddressInfo/Checkbox.button_pressed :
@@ -122,6 +133,40 @@ func _on_checkbox_toggled(toggled_on: bool) -> void:
 	$LineEdit.visible = toggled_on
 "
 
+[sub_resource type="GDScript" id="GDScript_qnrtv"]
+resource_name = "ServerBrowser"
+script/source = "extends Control
+
+signal found_server
+signal server_removed
+
+var broadcastTimer : Timer
+
+var RoomInfo : Dictionary = {\"name\":\"name\",\"playerCount\":0}
+var broadcaster : PacketPeerUDP
+var broadcastPort : int = 4445
+
+func _ready() -> void:
+	broadcastTimer = $BroadcastTimer
+	broadcastPort = GameManager.port + 1
+
+func setUpBroadCast(name : String) -> void:
+	RoomInfo.name = name
+	RoomInfo.playerCount = PlayerData.all_data.size()
+	broadcaster = PacketPeerUDP.new()
+	broadcaster.set_broadcast_enabled(true)
+	broadcaster.set_dest_address('192.168.255.255', GameManager.port)
+	
+	#var ok = broadcaster.bind(broadcastPort)
+	#if ok == OK:
+		
+	
+
+func _on_broadcast_timer_timeout() -> void:
+	
+	pass # Replace with function body.
+"
+
 [node name="Control" type="Control"]
 layout_mode = 3
 anchors_preset = 7
@@ -129,6 +174,10 @@ anchor_left = 0.5
 anchor_top = 1.0
 anchor_right = 0.5
 anchor_bottom = 1.0
+offset_left = -182.0
+offset_top = -221.0
+offset_right = -182.0
+offset_bottom = -221.0
 grow_horizontal = 2
 grow_vertical = 0
 script = SubResource("GDScript_ikndx")
@@ -156,10 +205,10 @@ anchor_left = 0.5
 anchor_top = 1.0
 anchor_right = 0.5
 anchor_bottom = 1.0
-offset_left = -105.0
-offset_top = -244.0
-offset_right = 103.0
-offset_bottom = -110.0
+offset_left = -328.0
+offset_top = -94.0
+offset_right = -120.0
+offset_bottom = 40.0
 grow_horizontal = 2
 grow_vertical = 0
 text = "Start Host"
@@ -171,10 +220,10 @@ anchor_left = 0.5
 anchor_top = 1.0
 anchor_right = 0.5
 anchor_bottom = 1.0
-offset_left = 122.0
-offset_top = -244.0
-offset_right = 330.0
-offset_bottom = -110.0
+offset_left = -329.0
+offset_top = 56.0
+offset_right = -121.0
+offset_bottom = 190.0
 grow_horizontal = 2
 grow_vertical = 0
 text = "Join as Client"
@@ -219,7 +268,7 @@ offset_left = 72.0
 offset_top = -316.0
 offset_right = 269.0
 offset_bottom = -285.0
-placeholder_text = "127.0.0.1"
+placeholder_text = "192.168.0.161"
 
 [node name="Address" type="RichTextLabel" parent="ServerAddressInfo/LineEdit"]
 layout_mode = 0
@@ -248,7 +297,17 @@ offset_right = -51.0
 offset_bottom = -285.0
 text = "Manual Address"
 
+[node name="ServerBrowser" type="Control" parent="."]
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
+script = SubResource("GDScript_qnrtv")
+
+[node name="BroadcastTimer" type="Timer" parent="ServerBrowser"]
+autostart = true
+
 [connection signal="button_down" from="SinglePlayer" to="." method="_on_single_player_button_down"]
 [connection signal="button_down" from="Start Host" to="." method="_on_start_host_button_down"]
 [connection signal="button_down" from="Start Client" to="." method="_on_start_client_button_down"]
 [connection signal="toggled" from="ServerAddressInfo/Checkbox" to="ServerAddressInfo" method="_on_checkbox_toggled"]
+[connection signal="timeout" from="ServerBrowser/BroadcastTimer" to="ServerBrowser" method="_on_broadcast_timer_timeout"]

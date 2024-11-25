@@ -21,9 +21,9 @@ script/source = "extends CharacterBody2D
 @export_range(0,1) var RopeTension: float  = 0.75
 @export_range(0,0.2) var RopeDampening: float  = 0.75
 
-var TRYHOOK : bool = false
-var CLICKPOSITION: Vector2
-var tempD: Dictionary
+@export var TRYHOOK : bool = false
+@export var CLICKPOSITION: Vector2
+@export var tempD: Dictionary
 var vPerpendicularVelocity : Vector2
 var AcSpeed : float
 var ObjectiveDirection : Vector2
@@ -43,8 +43,8 @@ func _ready() -> void:
 
 
 func _physics_process(_delta: float) -> void:
-	if !$MultiplayerSynchronizer.is_multiplayer_authority() : return
 	
+	print(\"velocity: \", velocity)
 	ConstantSpeed()
 	if TRYHOOK:
 		HookLogic()
@@ -66,7 +66,8 @@ func _physics_process(_delta: float) -> void:
 	
 #Handles touch input
 func _unhandled_input(event: InputEvent) -> void:
-	if !$MultiplayerSynchronizer.is_multiplayer_authority() : return
+	if !$MultiplayerSynchronizer.is_multiplayer_authority() : 
+		return
 	
 	if event is InputEventScreenTouch:
 		TRYHOOK = event.pressed
@@ -166,6 +167,15 @@ properties/0/replication_mode = 1
 properties/1/path = NodePath(".:Rotation")
 properties/1/spawn = true
 properties/1/replication_mode = 1
+properties/2/path = NodePath(".:TRYHOOK")
+properties/2/spawn = true
+properties/2/replication_mode = 2
+properties/3/path = NodePath(".:CLICKPOSITION")
+properties/3/spawn = true
+properties/3/replication_mode = 2
+properties/4/path = NodePath(".:tempD")
+properties/4/spawn = true
+properties/4/replication_mode = 2
 
 [node name="Player" type="CharacterBody2D"]
 script = SubResource("GDScript_v5a8b")
