@@ -197,37 +197,43 @@ var listen_port : int = GameManager.port
 var broadcast_timer_active : bool = false
 var broadcast_timer : float = 0
 var broadcaster : PacketPeerUDP
-var broadcast_port : int = GameManager.port + 1
+var broadcast_port : int
 
 
 func setup_listener() -> void :
 	listener = PacketPeerUDP.new()
-	var error : Error = listener.bind(listen_port)
-	if error :
-		print("Error setting up listen port " + str(listen_port))
-		print(error)
-		return
-	
+	while(!listener.is_bound()):
+		var error : Error = listener.bind(listen_port)
+		if error :
+			print("Error setting up listen port " + str(listen_port))
+			print("Error code: ", error)
+			listen_port +=1
+			if(listen_port == GameManager.port + 32):
+				return
+		
+	GameManager.port = listen_port + 1
 	listen_timer_active = true
 	
 	print("listen set up to port " + str(listen_port))
 
 func setup_broadcast(lobbyName : String) -> void:
+	broadcast_port = GameManager.port + 1
 	lobby_info.name = lobbyName
 	lobby_info.ip = GameManager.address
 	lobby_info.playerCount = all_data.size()
 	
 	print(lobby_info)
-	
 	broadcaster = PacketPeerUDP.new()
 	broadcaster.set_broadcast_enabled(true)
 	broadcaster.set_dest_address(broadcast_address, GameManager.port)
-	
-	var error : Error = broadcaster.bind(broadcast_port)
-	if error :
-		print("Error setting up broadcast")
-		print(error)
-		return
+	while(!broadcaster.is_bound()):
+		var error : Error = broadcaster.bind(broadcast_port)
+		if error:
+			print("Error setting up broadcast on port ", broadcast_port)
+			print("Error code: ", error)
+			broadcast_port +=1
+			if(broadcast_port == GameManager.port + 32):
+				return
 	
 	broadcast_timer_active = true
 	

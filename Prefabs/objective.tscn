@@ -5,12 +5,11 @@
 [sub_resource type="GDScript" id="GDScript_x7ga2"]
 script/source = "extends Area2D
 
-signal Collected()
+signal Collected(collectedNode : Node2D)
 
 func _on_body_entered(body: Node2D) -> void:
 	if body.is_in_group(\"Player\"):
-		#GameManager.
-		pass # Replace with function body.
+		Collected.emit(self)
 "
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_l5dmy"]
