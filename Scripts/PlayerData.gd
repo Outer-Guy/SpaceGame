@@ -1,5 +1,6 @@
 extends Node
 
+#region DEFINITIONS
 enum GAMESTATE {
 	MAIN_MENU,
 	LOBBY,
@@ -48,9 +49,22 @@ class PlayerInfo:
 		# EXAMPLE : 
 		# (Host, ID: 1) Gero: is on Lobby, not ready
 		print(msg)
+#endregion
 
 func _ready() -> void:
 	multiplayer.peer_disconnected.connect(on_peer_disconnected)
+
+func _process(delta : float) -> void:
+	if broadcast_timer_active : 
+		broadcast_timer += delta
+		if broadcast_timer >= broadcast_interval_in_seconds : 
+			_on_broadcast_timer_timeout()
+			broadcast_timer = 0
+	if listen_timer_active : 
+		listen_timer += delta
+		if listen_timer >= broadcast_interval_in_seconds : 
+			_on_listen_timer_timeout()
+			listen_timer = 0
 
 func log_all() -> void:
 	print(local.username + " got:")
@@ -61,7 +75,7 @@ func log_all() -> void:
 var all_data : Dictionary = {}
 signal on_all_data_set
 
-# -------------- GETTERS --------------------
+#region GETTERS
 # Returns PlayerInfo referring to local player
 var local : PlayerInfo:
 	get:
@@ -83,7 +97,9 @@ func all_ready() -> bool :
 		are_ready = are_ready && data.ready
 	return are_ready
 
-# -------------- SETTERS --------------------
+#endregion
+
+#region SETTERS
 func check_id(id : int) -> bool :
 	if(all_data.has(id)) :
 		return true
@@ -108,9 +124,9 @@ func set_ready(id : int, state : bool) -> void :
 @rpc("any_peer", "call_local")
 func set_gamestate(id: int , state : GAMESTATE) -> void :
 	if check_id(id) : all_data[id].gamestate = state
+#endregion
 
-# -------------- SYNCING --------------------
-
+#region SYNCING
 func on_peer_disconnected(id : int) -> void :
 	if multiplayer.is_server() :
 		remove_player_data.rpc(id)
@@ -162,9 +178,87 @@ func set_player_data(serialized_data : Array) -> void :
 	# serialized_data[0] has a reference to the id sent
 	if all_data.has(serialized_data[0]) : all_data.erase(serialized_data[0])
 	all_data[serialized_data[0]] = PlayerInfo.deserialize(serialized_data)
+#endregion
 
-# ---------------- EXTRA ------------------ 
+#region BROADCASTING
 
+var broadcast_interval_in_seconds : float = 1
+var broadcast_address : String = '192.168.255.255'
+
+var lobby_info : Dictionary
+var all_lobby_data : Array = []
+signal on_all_lobby_data_changed
+
+var listen_timer_active : bool = false
+var listen_timer : float = 0
+var listener : PacketPeerUDP
+var listen_port : int = GameManager.port
+
+var broadcast_timer_active : bool = false
+var broadcast_timer : float = 0
+var broadcaster : PacketPeerUDP
+var broadcast_port : int = GameManager.port + 1
+
+
+func setup_listener() -> void :
+	listener = PacketPeerUDP.new()
+	var error : Error = listener.bind(listen_port)
+	if error :
+		print("Error setting up listen port " + str(listen_port))
+		print(error)
+		return
+	
+	listen_timer_active = true
+	
+	print("listen set up to port " + str(listen_port))
+
+func setup_broadcast(lobbyName : String) -> void:
+	lobby_info.name = lobbyName
+	lobby_info.ip = GameManager.address
+	lobby_info.playerCount = all_data.size()
+	
+	print(lobby_info)
+	
+	broadcaster = PacketPeerUDP.new()
+	broadcaster.set_broadcast_enabled(true)
+	broadcaster.set_dest_address(broadcast_address, GameManager.port)
+	
+	var error : Error = broadcaster.bind(broadcast_port)
+	if error :
+		print("Error setting up broadcast")
+		print(error)
+		return
+	
+	broadcast_timer_active = true
+	
+	print("broadcast set up to port " + str(broadcast_port))
+
+func _on_broadcast_timer_timeout() -> void:
+	lobby_info.playerCount = PlayerData.all_data.size()
+	var error : Error = broadcaster.put_packet(JSON.stringify(lobby_info).to_ascii_buffer())
+	if error :
+		printerr("Error while sending broadcast packet")
+		printerr(error)
+
+func _on_listen_timer_timeout() -> void :
+	if listener == null : return
+	if listener.get_available_packet_count() > 0 :
+		print("Packet recieved from " + str(listener.get_packet_ip()) + ":" + str(listener.get_packet_port()))
+		var data_recieved : Dictionary = JSON.parse_string(listener.get_packet().get_string_from_ascii())
+		for data : Dictionary in all_lobby_data:
+			if data.ip == data_recieved.ip : return
+		all_lobby_data.append(data_recieved)
+		on_all_lobby_data_changed.emit()
+
+func clean_up_broadcasting() -> void :
+	if listener != null : listener.close()
+	if broadcaster != null : broadcaster.close()
+	listen_timer_active = false
+	broadcast_timer_active = false
+
+#endregion
+
+#region EXTRA
 func create_empty_server() -> void :
 	var peer : ENetMultiplayerPeer = ENetMultiplayerPeer.new()
 	var error : Error = peer.create_server(4444, 1)
@@ -172,3 +266,4 @@ func create_empty_server() -> void :
 	multiplayer.set_multiplayer_peer(peer)
 	create_player_data(1, "debugPlayer")
 	set_gamestate(1, PlayerData.GAMESTATE.PLAYING)
+#endregion

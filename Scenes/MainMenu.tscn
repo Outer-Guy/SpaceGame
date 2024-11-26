@@ -1,14 +1,14 @@
-[gd_scene load_steps=5 format=3 uid="uid://bi0m7wrpvd08l"]
+[gd_scene load_steps=6 format=3 uid="uid://bi0m7wrpvd08l"]
+
+[ext_resource type="PackedScene" uid="uid://c67bcrwpuhy30" path="res://Prefabs/server_info_template.tscn" id="1_7mtlk"]
 
 [sub_resource type="GDScript" id="GDScript_ikndx"]
 resource_name = "MainMenu"
 script/source = "extends Control
 
-
-@export var port : int = 4444
-@export var max_players : int = 4
 @export var compression_type : ENetConnection.CompressionMode = ENetConnection.CompressionMode.COMPRESS_NONE
 
+@export var game_hosting_port : int = GameManager.port + 2
 @export var should_log : bool = false
 
 var peer : ENetMultiplayerPeer
@@ -19,20 +19,8 @@ func _ready() -> void:
 	multiplayer.connected_to_server.connect(on_connected_to_server)
 	multiplayer.connection_failed.connect(on_connection_failed)
 	PlayerData.on_all_data_set.connect(handle_scene_transition)
-	GameManager.port = port
-	GameManager.address = get_local_ip()
 	
-
-func get_local_ip() -> String:
-	var ip : String = \"\"
-	for ipString : String in IP.get_local_addresses():
-		if \".\" in ipString and not ipString.begins_with(\"127.\") and not ipString.begins_with(\"169.254.\"):
-			if ipString.begins_with(\"192.168.\") or ipString.begins_with(\"10.\") or (ipString.begins_with(\"172.\") and int(ipString.split(\".\")[1]) >= 16 and int(ipString.split(\".\")[1]) <= 31):
-				ip = ipString
-				break
-	return ip
-
-
+	$ServerBrowser.on_join_server.connect(on_join_server)
 
 # On every connection and disconnection, server and client
 func on_peer_connected(id : int) -> void:
@@ -45,7 +33,7 @@ func on_peer_disconnected(id : int) -> void:
 func on_connected_to_server() -> void:
 	if should_log : print(\"Succesfull connection to \" + GameManager.address)
 	
-	PlayerData.on_player_connected.rpc_id(1, multiplayer.get_unique_id(), $LineEdit.text)
+	PlayerData.on_player_connected.rpc_id(1, multiplayer.get_unique_id(), $UsernameLine.text)
 
 func on_connection_failed() -> void:
 	if should_log : print(\"Failed to connect to \" + GameManager.address)
@@ -55,64 +43,80 @@ func handle_scene_transition() -> void :
 	GameManager.load_scene(\"res://Scenes/MultiplayerLobby.tscn\")
 
 func username_not_null() -> bool :
-	if($LineEdit.text == \"\"): 
-		$LineEdit/Warning.show()
+	if($UsernameLine.text == \"\"): 
+		$UsernameLine/Warning.show()
 		return false
 	else :
-		$LineEdit/Warning.hide()
+		$UsernameLine/Warning.hide()
 		return true
 
 func _on_start_host_button_down() -> void:
 	if !username_not_null() : return
+	PlayerData.create_player_data(multiplayer.get_unique_id(), $UsernameLine.text)
 	create_server(should_log)
-	PlayerData.create_player_data(multiplayer.get_unique_id(), $LineEdit.text)
 	handle_scene_transition()
 
 func _on_start_client_button_down() -> void:
 	if !username_not_null() : return
-	create_client(should_log)
+	create_client(get_address_from_line(), should_log)
+
+func on_join_server(ip : String) -> void :
+	create_client(ip, should_log)
 
 func _on_single_player_button_down() -> void:
 	if !username_not_null() : return
 	create_server(should_log)
-	PlayerData.create_player_data(multiplayer.get_unique_id(), $LineEdit.text)
+	PlayerData.create_player_data(multiplayer.get_unique_id(), $UsernameLine.text)
 	PlayerData.set_gamestate(1, PlayerData.GAMESTATE.PLAYING)
 	GameManager.load_scene(\"res://Scenes/GamePlayTest.tscn\")
 
 func create_server(log_active : bool = false) -> void :
 	peer = ENetMultiplayerPeer.new()
 	
-	var error : Error = peer.create_server(port, max_players)
+	var error : Error = peer.create_server(game_hosting_port, GameManager.max_players)
 	if error:
-		if log_active : printerr(\"Failed to Host at port: \" + str(port))
+		if log_active : printerr(\"Failed to Host at port: \" + str(game_hosting_port))
 		if log_active : printerr(error)
 		return
 	
 	peer.get_host().compress(compression_type)
 	multiplayer.set_multiplayer_peer(peer)
 	
-	if log_active : print(\"Server Started at port \" + str(port))
+	PlayerData.setup_broadcast(get_lobby_name_from_line())
+	
+	if log_active : print(\"Server Started at port \" + str(game_hosting_port))
 
-func create_client(log_active : bool = false) -> void :
+func create_client(ip : String, log_active : bool = false) -> void :
 	peer = ENetMultiplayerPeer.new()
-	
-	var _address : String = get_address_from_line()
-	
-	var error : Error = peer.create_client(_address, port)
+		
+	var error : Error = peer.create_client(ip, game_hosting_port)
 	if error:
-		if log_active : print(\"Failed to connect to \" + _address)
+		if log_active : print(\"Failed to connect to \" + ip)
 		return
 		
 	peer.get_host().compress(compression_type)
 	multiplayer.set_multiplayer_peer(peer)
-	if log_active : print(\"Connection sent to: \" + _address)
+	if log_active : print(\"Connection sent to: \" + ip)
+
+func get_lobby_name_from_line() -> String :
+	if $LobbyNameLine.text != \"\":
+			return $LobbyNameLine.text
+	return $UsernameLine.text + \"'s Game\"
 
 func get_address_from_line() -> String :
-	if $ServerAddressInfo/Checkbox.button_pressed :
-		if $ServerAddressInfo/LineEdit.text == \"\":
-			return $ServerAddressInfo/LineEdit.placeholder_text
-		else : return $ServerAddressInfo/LineEdit.text
-	else : return $ServerAddressInfo/LineEdit.placeholder_text
+	if $ServerAddressInfo/Checkbox.button_pressed && $ServerAddressInfo/LineEdit.text != \"\":
+		return $ServerAddressInfo/LineEdit.text
+	return $ServerAddressInfo/LineEdit.placeholder_text
+
+
+func _on_debug_timer_timeout() -> void:
+	if OS.get_cmdline_args().size() > 2 :
+		var arg : String = OS.get_cmdline_args()[2]
+		match arg :
+			\"host\":
+				_on_start_host_button_down()
+			\"client\":
+				PlayerData.setup_listener()
 "
 
 [sub_resource type="GDScript" id="GDScript_o8gq4"]
@@ -137,34 +141,45 @@ func _on_checkbox_toggled(toggled_on: bool) -> void:
 resource_name = "ServerBrowser"
 script/source = "extends Control
 
-signal found_server
-signal server_removed
+@export var server_info_template : PackedScene
 
-var broadcastTimer : Timer
+var displayed_ips : Array = []
+var displayed_nodes : Array = []
 
-var RoomInfo : Dictionary = {\"name\":\"name\",\"playerCount\":0}
-var broadcaster : PacketPeerUDP
-var broadcastPort : int = 4445
+signal on_join_server
 
 func _ready() -> void:
-	broadcastTimer = $BroadcastTimer
-	broadcastPort = GameManager.port + 1
+	PlayerData.on_all_lobby_data_changed.connect(update_server_list)
 
-func setUpBroadCast(name : String) -> void:
-	RoomInfo.name = name
-	RoomInfo.playerCount = PlayerData.all_data.size()
-	broadcaster = PacketPeerUDP.new()
-	broadcaster.set_broadcast_enabled(true)
-	broadcaster.set_dest_address('192.168.255.255', GameManager.port)
+func update_server_list() -> void :
+	var all_lobby_ips : Array
 	
-	#var ok = broadcaster.bind(broadcastPort)
-	#if ok == OK:
+	for data : Dictionary in PlayerData.all_lobby_data:
+		if !displayed_ips.has(data.ip):
+			var new_server_info : Node = server_info_template.instantiate()
+			
+			new_server_info.set_data(data.name, data.ip, data.playerCount)
+			new_server_info.on_join_server_pressed.connect(on_join_server_pressed)
+			
+			$ServerInfoList.add_child(new_server_info)
+			displayed_ips.append(data.ip)
+			displayed_nodes.append(new_server_info)
+		else:
+			displayed_nodes[displayed_ips.find(data.ip)].set_data(data.name, data.ip, data.playerCount)
 		
+		all_lobby_ips.append(data.ip)
 	
+	for ip : String in displayed_ips :
+		if !all_lobby_ips.has(ip):
+			var node_to_remove : Node = displayed_nodes[displayed_ips.find(ip)]
+			
+			node_to_remove.on_join_server_pressed.disconnect()
+			remove_child(node_to_remove)
+			displayed_ips.erase(ip)
+			displayed_nodes.erase(node_to_remove)
 
-func _on_broadcast_timer_timeout() -> void:
-	
-	pass # Replace with function body.
+func on_join_server_pressed(ip : String) -> void :
+	on_join_server.emit(ip)
 "
 
 [node name="Control" type="Control"]
@@ -182,6 +197,11 @@ grow_horizontal = 2
 grow_vertical = 0
 script = SubResource("GDScript_ikndx")
 should_log = true
+
+[node name="DebugTimer" type="Timer" parent="."]
+wait_time = 0.2
+one_shot = true
+autostart = true
 
 [node name="SinglePlayer" type="Button" parent="."]
 layout_mode = 1
@@ -228,15 +248,15 @@ grow_horizontal = 2
 grow_vertical = 0
 text = "Join as Client"
 
-[node name="LineEdit" type="LineEdit" parent="."]
+[node name="UsernameLine" type="LineEdit" parent="."]
 layout_mode = 0
 offset_left = -231.0
 offset_top = -375.0
-offset_right = 270.0
+offset_right = 54.0
 offset_bottom = -344.0
 script = SubResource("GDScript_o8gq4")
 
-[node name="Username" type="RichTextLabel" parent="LineEdit"]
+[node name="Username" type="RichTextLabel" parent="UsernameLine"]
 layout_mode = 0
 offset_left = -88.0
 offset_top = 4.0
@@ -245,7 +265,7 @@ offset_bottom = 44.0
 theme_override_colors/default_color = Color(1, 1, 1, 1)
 text = "Username:"
 
-[node name="Warning" type="RichTextLabel" parent="LineEdit"]
+[node name="Warning" type="RichTextLabel" parent="UsernameLine"]
 visible = false
 layout_mode = 0
 offset_left = 8.0
@@ -255,9 +275,25 @@ offset_bottom = 78.0
 theme_override_colors/default_color = Color(1, 1, 1, 1)
 text = "Username cannot be empty"
 
+[node name="LobbyNameLine" type="LineEdit" parent="."]
+offset_left = 216.0
+offset_top = -375.0
+offset_right = 708.0
+offset_bottom = -344.0
+
+[node name="LobbyName" type="RichTextLabel" parent="LobbyNameLine"]
+layout_mode = 0
+offset_left = -110.0
+offset_top = 4.0
+offset_right = 23.0
+offset_bottom = 44.0
+theme_override_colors/default_color = Color(1, 1, 1, 1)
+text = "Lobby Name:"
+
 [node name="ServerAddressInfo" type="Control" parent="."]
 anchors_preset = 0
-offset_right = 40.0
+offset_left = -87.0
+offset_right = -47.0
 offset_bottom = 40.0
 script = SubResource("GDScript_wliye")
 
@@ -279,16 +315,6 @@ offset_bottom = 44.0
 theme_override_colors/default_color = Color(1, 1, 1, 1)
 text = "Address:"
 
-[node name="Warning" type="RichTextLabel" parent="ServerAddressInfo/LineEdit"]
-visible = false
-layout_mode = 0
-offset_left = 8.0
-offset_top = 38.0
-offset_right = 299.0
-offset_bottom = 78.0
-theme_override_colors/default_color = Color(1, 1, 1, 1)
-text = "Username cannot be empty"
-
 [node name="Checkbox" type="CheckBox" parent="ServerAddressInfo"]
 layout_mode = 0
 offset_left = -236.0
@@ -297,17 +323,78 @@ offset_right = -51.0
 offset_bottom = -285.0
 text = "Manual Address"
 
-[node name="ServerBrowser" type="Control" parent="."]
-anchors_preset = 0
-offset_right = 40.0
-offset_bottom = 40.0
+[node name="ServerBrowser" type="VBoxContainer" parent="."]
+layout_mode = 0
+offset_left = -87.0
+offset_top = -272.0
+offset_right = 708.0
+offset_bottom = 162.0
 script = SubResource("GDScript_qnrtv")
+server_info_template = ExtResource("1_7mtlk")
 
-[node name="BroadcastTimer" type="Timer" parent="ServerBrowser"]
-autostart = true
+[node name="Label" type="Label" parent="ServerBrowser"]
+layout_mode = 2
+text = "Server Browser"
+horizontal_alignment = 1
+vertical_alignment = 1
 
+[node name="HSeparator" type="HSeparator" parent="ServerBrowser"]
+layout_mode = 2
+
+[node name="ServerInfoTitle" type="HBoxContainer" parent="ServerBrowser"]
+custom_minimum_size = Vector2(0, 60)
+layout_mode = 2
+
+[node name="VSeparator5" type="VSeparator" parent="ServerBrowser/ServerInfoTitle"]
+layout_mode = 2
+
+[node name="NameLabel" type="Label" parent="ServerBrowser/ServerInfoTitle"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Lobby Name"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="VSeparator" type="VSeparator" parent="ServerBrowser/ServerInfoTitle"]
+layout_mode = 2
+
+[node name="IPLabel" type="Label" parent="ServerBrowser/ServerInfoTitle"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "IP Address"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="VSeparator2" type="VSeparator" parent="ServerBrowser/ServerInfoTitle"]
+layout_mode = 2
+
+[node name="PlayerCountLabel" type="Label" parent="ServerBrowser/ServerInfoTitle"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Player Count"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="VSeparator3" type="VSeparator" parent="ServerBrowser/ServerInfoTitle"]
+layout_mode = 2
+
+[node name="EmptyLabel" type="Label" parent="ServerBrowser/ServerInfoTitle"]
+layout_mode = 2
+size_flags_horizontal = 3
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="VSeparator4" type="VSeparator" parent="ServerBrowser/ServerInfoTitle"]
+layout_mode = 2
+
+[node name="HSeparator2" type="HSeparator" parent="ServerBrowser"]
+layout_mode = 2
+
+[node name="ServerInfoList" type="Control" parent="ServerBrowser"]
+layout_mode = 2
+
+[connection signal="timeout" from="DebugTimer" to="." method="_on_debug_timer_timeout"]
 [connection signal="button_down" from="SinglePlayer" to="." method="_on_single_player_button_down"]
 [connection signal="button_down" from="Start Host" to="." method="_on_start_host_button_down"]
 [connection signal="button_down" from="Start Client" to="." method="_on_start_client_button_down"]
 [connection signal="toggled" from="ServerAddressInfo/Checkbox" to="ServerAddressInfo" method="_on_checkbox_toggled"]
-[connection signal="timeout" from="ServerBrowser/BroadcastTimer" to="ServerBrowser" method="_on_broadcast_timer_timeout"]
