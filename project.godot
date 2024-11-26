@@ -25,6 +25,10 @@ PlayerData="*res://Scripts/PlayerData.gd"
 gdscript/warnings/untyped_declaration=2
 gdscript/warnings/inferred_declaration=2
 
+[global_group]
+
+Player="A type of Player"
+
 [input_devices]
 
 pointing/emulate_touch_from_mouse=true

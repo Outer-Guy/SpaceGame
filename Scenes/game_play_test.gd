@@ -16,3 +16,6 @@ func _ready() -> void:
 		if follow_camera && data.id == PlayerData.local.id : $"Camera2D".reparent(new_player)
 		new_player.global_position = spawnPoints[index].global_position
 		index += 1
+
+func onCollectedParticle() -> void:
+	pass

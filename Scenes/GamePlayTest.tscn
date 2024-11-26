@@ -3,15 +3,11 @@
 [ext_resource type="Script" path="res://Scenes/game_play_test.gd" id="1_45rtu"]
 [ext_resource type="PackedScene" uid="uid://ctwp3thgeuin1" path="res://Prefabs/PlayerVersions/001-Demo.tscn" id="2_yp1r0"]
 [ext_resource type="PackedScene" uid="uid://dvwb55aw2eyvw" path="res://Prefabs/Asteroid.tscn" id="3_8cg06"]
-
-[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_3y52j"]
-particle_flag_disable_z = true
-gravity = Vector3(0, 98, 0)
-
-[sub_resource type="ImageTexture" id="ImageTexture_g2rtn"]
+[ext_resource type="Texture2D" uid="uid://eji7bt3bsuqi" path="res://Assets/star.png" id="3_phx13"]
+[ext_resource type="PackedScene" uid="uid://cifbqas8f68ko" path="res://Prefabs/objective.tscn" id="5_5okbe"]
 
 [sub_resource type="Gradient" id="Gradient_x5ky3"]
-colors = PackedColorArray(0.0261, 0.0261, 0.03, 1, 0.12384, 0.1188, 0.27, 1)
+colors = PackedColorArray(0, 0, 0, 1, 0.0822467, 0.0806, 0.13, 1)
 
 [sub_resource type="GradientTexture1D" id="GradientTexture1D_okjx7"]
 gradient = SubResource("Gradient_x5ky3")
@@ -22,14 +18,48 @@ script = ExtResource("1_45rtu")
 player_prefab = ExtResource("2_yp1r0")
 follow_camera = false
 
-[node name="GPUParticles2D" type="GPUParticles2D" parent="."]
-position = Vector2(584, 329)
+[node name="CPUParticles2D" type="CPUParticles2D" parent="."]
+z_index = -50
+position = Vector2(1024, -32)
 rotation = -1.57079
-scale = Vector2(2.625, 1280)
-process_material = SubResource("ParticleProcessMaterial_3y52j")
-texture = SubResource("ImageTexture_g2rtn")
+amount = 200
+lifetime = 40.0
+preprocess = 160.0
+speed_scale = 0.25
+texture = ExtResource("3_phx13")
+emission_shape = 3
+emission_rect_extents = Vector2(0, 1080)
+direction = Vector2(-1, -1)
+spread = 0.0
+gravity = Vector2(0, 0)
+initial_velocity_min = 25.0
+initial_velocity_max = 25.0
+scale_amount_min = 0.01
+scale_amount_max = 0.08
+color = Color(0.252, 0.2592, 0.3, 1)
+
+[node name="CPUParticles2D2" type="CPUParticles2D" parent="."]
+z_index = -50
+position = Vector2(1024, -32)
+rotation = -1.57079
+amount = 40
+lifetime = 10.0
+preprocess = 40.0
+speed_scale = 0.25
+texture = ExtResource("3_phx13")
+emission_shape = 3
+emission_rect_extents = Vector2(0, 1080)
+direction = Vector2(-1, -1)
+spread = 0.0
+gravity = Vector2(0, 0)
+initial_velocity_min = 100.0
+initial_velocity_max = 100.0
+scale_amount_min = 0.1
+scale_amount_max = 0.2
+color = Color(0.5, 0.5, 0.5, 1)
 
 [node name="Background" type="Sprite2D" parent="."]
+z_index = -1000
 position = Vector2(584, 329)
 rotation = -1.57079
 scale = Vector2(2.625, 1280)
@@ -65,3 +95,5 @@ position = Vector2(703, 569)
 position = Vector2(1057, 365)
 
 [node name="Camera2D" type="Camera2D" parent="."]
+
+[node name="Objective" parent="." instance=ExtResource("5_5okbe")]

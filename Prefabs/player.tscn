@@ -177,7 +177,7 @@ properties/4/path = NodePath(".:tempD")
 properties/4/spawn = true
 properties/4/replication_mode = 2
 
-[node name="Player" type="CharacterBody2D"]
+[node name="Player" type="CharacterBody2D" groups=["Player"]]
 script = SubResource("GDScript_v5a8b")
 Rotation = 0.5
 AttackAngle = 0.5
