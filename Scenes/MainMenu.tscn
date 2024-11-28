@@ -72,6 +72,15 @@ func _on_single_player_button_down() -> void:
 
 func create_server(log_active : bool = false) -> void :
 	peer = ENetMultiplayerPeer.new()
+	var error : Error = 1
+	while(error):
+		error = peer.create_server(game_hosting_port, GameManager.max_players)
+		if error:
+			if log_active : printerr(\"Failed to Host at port: \" + str(game_hosting_port))
+			if log_active : printerr(error)
+		game_hosting_port +=1
+		if(game_hosting_port == GameManager.port + 32):
+			return
 	
 	var error : Error = peer.create_server(game_hosting_port, GameManager.max_players)
 	if error:

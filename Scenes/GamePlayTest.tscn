@@ -1,4 +1,4 @@
-[gd_scene load_steps=8 format=3 uid="uid://c1ia02k5bags2"]
+[gd_scene load_steps=11 format=3 uid="uid://c1ia02k5bags2"]
 
 [ext_resource type="Script" path="res://Scenes/game_play_test.gd" id="1_45rtu"]
 [ext_resource type="PackedScene" uid="uid://ctwp3thgeuin1" path="res://Prefabs/PlayerVersions/001-Demo.tscn" id="2_yp1r0"]
@@ -13,9 +13,33 @@ colors = PackedColorArray(0, 0, 0, 1, 0.0822467, 0.0806, 0.13, 1)
 gradient = SubResource("Gradient_x5ky3")
 width = 261
 
+[sub_resource type="LabelSettings" id="LabelSettings_e5ygx"]
+font_size = 32
+
+[sub_resource type="GDScript" id="GDScript_y133l"]
+script/source = "extends Label
+
+
+
+func _on_node_2d_on_points_change(points: int) -> void:
+	text = str(points)
+	pass # Replace with function body.
+"
+
+[sub_resource type="GDScript" id="GDScript_ae6ht"]
+script/source = "extends Label
+
+
+
+func _on_node_2d_on_timer_change(newTime: int) -> void:
+	text = str(newTime)
+	pass # Replace with function body.
+"
+
 [node name="Node2D" type="Node2D"]
 script = ExtResource("1_45rtu")
 player_prefab = ExtResource("2_yp1r0")
+objective_prefab = ExtResource("5_5okbe")
 follow_camera = false
 
 [node name="CPUParticles2D" type="CPUParticles2D" parent="."]
@@ -96,4 +120,49 @@ position = Vector2(1057, 365)
 
 [node name="Camera2D" type="Camera2D" parent="."]
 
-[node name="Objective" parent="." instance=ExtResource("5_5okbe")]
+[node name="UI" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="Points" type="Label" parent="UI"]
+layout_mode = 2
+offset_left = 21.0
+offset_top = 13.0
+offset_right = 126.0
+offset_bottom = 58.0
+text = "Points:"
+label_settings = SubResource("LabelSettings_e5ygx")
+
+[node name="Counter" type="Label" parent="UI"]
+layout_mode = 2
+offset_left = 137.0
+offset_top = 13.0
+offset_right = 242.0
+offset_bottom = 58.0
+text = "0"
+label_settings = SubResource("LabelSettings_e5ygx")
+script = SubResource("GDScript_y133l")
+
+[node name="Points2" type="Label" parent="UI"]
+layout_mode = 2
+offset_left = 899.0
+offset_top = 13.0
+offset_right = 1044.0
+offset_bottom = 58.0
+text = "Time left:"
+label_settings = SubResource("LabelSettings_e5ygx")
+
+[node name="Counter2" type="Label" parent="UI"]
+layout_mode = 2
+offset_left = 1056.0
+offset_top = 13.0
+offset_right = 1161.0
+offset_bottom = 58.0
+text = "0"
+label_settings = SubResource("LabelSettings_e5ygx")
+script = SubResource("GDScript_ae6ht")
+
+[connection signal="OnPointsChange" from="." to="UI/Counter" method="_on_node_2d_on_points_change"]
+[connection signal="OnTimerChange" from="." to="UI/Counter2" method="_on_node_2d_on_timer_change"]

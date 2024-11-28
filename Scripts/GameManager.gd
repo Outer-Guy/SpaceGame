@@ -3,6 +3,7 @@ extends Node
 var port : int = 4444
 var address : String = get_local_ip()
 var max_players : int = 4
+var points : Array[int] = [0]
 
 func _ready() -> void:
 	PlayerData.on_all_data_set.connect(PlayerData.log_all)

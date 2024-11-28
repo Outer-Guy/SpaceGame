@@ -8,9 +8,17 @@ script/source = "extends Area2D
 signal Collected()
 
 func _on_body_entered(body: Node2D) -> void:
-	if body.is_in_group(\"Player\"):
-		#GameManager.
-		pass # Replace with function body.
+	
+	print()
+	if body.name == \"Player\" && body.is_multiplayer_authority():
+		OnCollected.rpc()
+		
+
+@rpc(\"any_peer\", \"call_local\")
+func OnCollected() -> void:
+	Collected.emit(self)
+	queue_free()
+	pass
 "
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_l5dmy"]

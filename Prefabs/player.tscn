@@ -44,7 +44,7 @@ func _ready() -> void:
 
 func _physics_process(_delta: float) -> void:
 	
-	print(\"velocity: \", velocity)
+	#print(\"velocity: \", velocity)
 	ConstantSpeed()
 	if TRYHOOK:
 		HookLogic()
@@ -138,7 +138,9 @@ func ConstantSpeed() -> void:
 	#print(SPEEDFORCE)
 #velocity = Vector2(SPEEDFORCE*cos(vPerpendicularVelocity),SPEEDFORCE* sin(vPerpendicularVelocity))
 #velocity = (velocity.length() + SPEEDFORCE) * lerp(velocity.normalized(),vPerpendicularVelocity.normalized(),RopeTension
-	
+
+func isMultiplayerAuthority() -> bool:
+	return $MultiplayerSynchronizer.is_multiplayer_authority()
 
 func _draw() -> void:
 	draw_line(Vector2.ZERO, velocity.length() * Vector2.RIGHT,Color.WHITE,-1)
@@ -177,7 +179,7 @@ properties/4/path = NodePath(".:tempD")
 properties/4/spawn = true
 properties/4/replication_mode = 2
 
-[node name="Player" type="CharacterBody2D" groups=["Player"]]
+[node name="Player" type="CharacterBody2D"]
 script = SubResource("GDScript_v5a8b")
 Rotation = 0.5
 AttackAngle = 0.5
