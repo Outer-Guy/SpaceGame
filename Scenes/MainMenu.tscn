@@ -161,7 +161,7 @@ func update_server_list() -> void :
 			new_server_info.set_data(data.name, data.ip, data.playerCount)
 			new_server_info.on_join_server_pressed.connect(on_join_server_pressed)
 			
-			$ServerInfoList.add_child(new_server_info)
+			add_child(new_server_info)
 			displayed_ips.append(data.ip)
 			displayed_nodes.append(new_server_info)
 		else:
@@ -389,9 +389,6 @@ vertical_alignment = 1
 layout_mode = 2
 
 [node name="HSeparator2" type="HSeparator" parent="ServerBrowser"]
-layout_mode = 2
-
-[node name="ServerInfoList" type="Control" parent="ServerBrowser"]
 layout_mode = 2
 
 [connection signal="timeout" from="DebugTimer" to="." method="_on_debug_timer_timeout"]
