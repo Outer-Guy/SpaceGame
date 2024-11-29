@@ -5,26 +5,18 @@
 [sub_resource type="GDScript" id="GDScript_v5a8b"]
 script/source = "extends CharacterBody2D
 
-@export_category(\"Base\")
-@export_subgroup(\"Mass\")
-@export_range(0,100) var RecievingMass: float  = 1
-@export_range(0,100) var AppliedMass: float  = 1
-@export_range(0,100) var GravityMass: float  = 1
-@export_subgroup(\"Movement\")
+@export_category(\"Movement\")
 @export var MAXSPEED: float = 300
 @export var ACCELERATION: float = 0.01
 #@export var SPEEDPOWER: float = 2
-@export_subgroup(\"Rotation\")
 @export_range(0,1) var Rotation: float = 1
 @export_range(0,1) var AttackAngle: float = 1
 @export_category(\"HookPhysics\")
-@export_subgroup(\"Reel\")
 @export var reelingMaxForce: float  = 100
 @export_range(0,1) var reelingLerp: float  = 0.75
 @export var reelingAcceleration: float  = 0.75
 @export var DistanceStrength: float  = 1
 @export var minDistanceRope: float  = 4
-@export_subgroup(\"Rope\")
 @export_range(0,1) var RopeTension: float  = 0.75
 
 var TRYHOOK : bool = false
@@ -74,22 +66,11 @@ func _unhandled_input(event: InputEvent) -> void:
 
 #Handles Hook Physics
 func HookLogic() -> void:
-#region SphereCastToTouch
+#region RaycastToTouch
 	var space_state: PhysicsDirectSpaceState2D = get_world_2d().direct_space_state
-	var query: PhysicsShapeQueryParameters2D = PhysicsShapeQueryParameters2D.new()
-	var queryShape : CircleShape2D = CircleShape2D.new()
-	queryShape.radius = 25
-	query.shape = queryShape
-	query.transform = Transform2D(0,Vector2.ONE,0,CLICKPOSITION)
-	var result : Array[Dictionary] = space_state.intersect_shape(query)
-	var minDistance : float = INF
-	for collisions : Dictionary in result:
-		if collisions.get(\"collider\") == self:
-			return
-		if(Vector2(CLICKPOSITION - collisions.get(\"collider\").position).length() <= minDistance):
-			tempD = collisions
-			minDistance = Vector2(CLICKPOSITION - collisions.get(\"collider\").position).length()
-	print(tempD.get(\"collider\"))
+	var query: PhysicsRayQueryParameters2D = PhysicsRayQueryParameters2D.create(global_position, CLICKPOSITION)
+	var result: Dictionary = space_state.intersect_ray(query)
+	tempD = result
 #endregion
 	
 	if !result.is_empty():
@@ -176,12 +157,7 @@ properties/1/spawn = true
 properties/1/replication_mode = 2
 
 [node name="Player" type="CharacterBody2D"]
-motion_mode = 1
 script = SubResource("GDScript_v5a8b")
-MAXSPEED = 150.0
-reelingLerp = 0.194
-reelingAcceleration = 0.01
-DistanceStrength = 2.0
 RopeTension = 0.121
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
