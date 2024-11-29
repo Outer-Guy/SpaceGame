@@ -82,7 +82,7 @@ func create_server(log_active : bool = false) -> void :
 		if(game_hosting_port == GameManager.port + 32):
 			return
 	
-	var error : Error = peer.create_server(game_hosting_port, GameManager.max_players)
+	error = peer.create_server(game_hosting_port, GameManager.max_players)
 	if error:
 		if log_active : printerr(\"Failed to Host at port: \" + str(game_hosting_port))
 		if log_active : printerr(error)
@@ -285,6 +285,7 @@ theme_override_colors/default_color = Color(1, 1, 1, 1)
 text = "Username cannot be empty"
 
 [node name="LobbyNameLine" type="LineEdit" parent="."]
+layout_mode = 0
 offset_left = 216.0
 offset_top = -375.0
 offset_right = 708.0

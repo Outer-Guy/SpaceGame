@@ -41,6 +41,7 @@ script = ExtResource("1_45rtu")
 player_prefab = ExtResource("2_yp1r0")
 objective_prefab = ExtResource("5_5okbe")
 follow_camera = false
+timer = 10.0
 
 [node name="CPUParticles2D" type="CPUParticles2D" parent="."]
 z_index = -50
@@ -90,10 +91,10 @@ scale = Vector2(2.625, 1280)
 texture = SubResource("GradientTexture1D_okjx7")
 
 [node name="Asteroid" parent="." instance=ExtResource("3_8cg06")]
-position = Vector2(173, 109)
+position = Vector2(601, 109)
 
 [node name="Asteroid2" parent="." instance=ExtResource("3_8cg06")]
-position = Vector2(182, 530)
+position = Vector2(610, 530)
 
 [node name="Asteroid3" parent="." instance=ExtResource("3_8cg06")]
 position = Vector2(939, 136)
@@ -102,7 +103,7 @@ position = Vector2(939, 136)
 position = Vector2(939, 497)
 
 [node name="Asteroid5" parent="." instance=ExtResource("3_8cg06")]
-position = Vector2(580, 303)
+position = Vector2(754, 303)
 
 [node name="SpawnPoints" type="Node2D" parent="."]
 
@@ -163,6 +164,15 @@ offset_bottom = 58.0
 text = "0"
 label_settings = SubResource("LabelSettings_e5ygx")
 script = SubResource("GDScript_ae6ht")
+
+[node name="Asteroid6" parent="." instance=ExtResource("3_8cg06")]
+position = Vector2(230, 109)
+
+[node name="Asteroid7" parent="." instance=ExtResource("3_8cg06")]
+position = Vector2(239, 530)
+
+[node name="Asteroid10" parent="." instance=ExtResource("3_8cg06")]
+position = Vector2(383, 303)
 
 [connection signal="OnPointsChange" from="." to="UI/Counter" method="_on_node_2d_on_points_change"]
 [connection signal="OnTimerChange" from="." to="UI/Counter2" method="_on_node_2d_on_timer_change"]

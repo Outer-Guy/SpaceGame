@@ -66,11 +66,20 @@ func _unhandled_input(event: InputEvent) -> void:
 
 #Handles Hook Physics
 func HookLogic() -> void:
-#region RaycastToTouch
+#region SphereCastToTouch
 	var space_state: PhysicsDirectSpaceState2D = get_world_2d().direct_space_state
-	var query: PhysicsRayQueryParameters2D = PhysicsRayQueryParameters2D.create(global_position, CLICKPOSITION)
-	var result: Dictionary = space_state.intersect_ray(query)
-	tempD = result
+	var query: PhysicsShapeQueryParameters2D = PhysicsShapeQueryParameters2D.new()
+	var queryShape : RectangleShape2D = RectangleShape2D.new()
+	queryShape.size = Vector2(50,50)
+	query.shape = queryShape
+	query.transform = Transform2D(0,Vector2.ONE,0,CLICKPOSITION)
+	var result : Array[Dictionary] = space_state.intersect_shape(query)
+	var minDistance : float = INF
+	for collisions : Dictionary in result:
+		if(Vector2(CLICKPOSITION - collisions.get(\"collider\").position).length() <= minDistance):
+			tempD = collisions
+			minDistance = Vector2(CLICKPOSITION - collisions.get(\"collider\").position).length()
+	print(tempD.get(\"collider\"))
 #endregion
 	
 	if !result.is_empty():
@@ -158,6 +167,9 @@ properties/1/replication_mode = 2
 
 [node name="Player" type="CharacterBody2D"]
 script = SubResource("GDScript_v5a8b")
+MAXSPEED = 150.0
+reelingLerp = 0.194
+reelingAcceleration = 0.01
 RopeTension = 0.121
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
