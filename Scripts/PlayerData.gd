@@ -208,7 +208,7 @@ func setup_listener() -> void :
 		print(error)
 		return
 	
-	print("listen set up to port " + str(listen_port))
+	# print("listen set up to port " + str(listen_port))
 	listen_timer_active = true
 
 func setup_broadcast(lobbyName : String) -> void:
@@ -216,7 +216,7 @@ func setup_broadcast(lobbyName : String) -> void:
 	lobby_info.ip = GameManager.address
 	lobby_info.playerCount = all_data.size()
 	
-	print(lobby_info)
+	# print(lobby_info)
 	
 	broadcaster = PacketPeerUDP.new()
 	broadcaster.set_broadcast_enabled(true)
@@ -228,7 +228,7 @@ func setup_broadcast(lobbyName : String) -> void:
 		print(error)
 		return
 	
-	print("broadcast set up to port " + str(broadcast_port))
+	# print("broadcast set up to port " + str(broadcast_port))
 	
 	broadcast_timer_active = true
 
@@ -263,6 +263,7 @@ func clean_up_broadcasting() -> void :
 	if broadcaster != null : broadcaster.close()
 	listen_timer_active = false
 	broadcast_timer_active = false
+	all_lobby_data.clear()
 
 #endregion
 
