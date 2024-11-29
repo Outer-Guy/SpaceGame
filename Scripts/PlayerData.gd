@@ -238,13 +238,12 @@ func _on_broadcast_timer_timeout() -> void:
 	if error :
 		printerr("Error while sending broadcast packet")
 		printerr(error)
-	else : print ("Packet sent.")
 
 func _on_listen_timer_timeout() -> void :
 	if listener == null : return
 	if listener.get_available_packet_count() > 0 :
 		var data_recieved : Dictionary = JSON.parse_string(listener.get_packet().get_string_from_utf8())
-		print("Packet recieved from " + str(listener.get_packet_ip()) + ":" + str(listener.get_packet_port()))
+		# print("Packet recieved from " + str(listener.get_packet_ip()) + ":" + str(listener.get_packet_port()))
 		data_recieved.ip = listener.get_packet_ip()
 		handle_lobby_data(data_recieved)
 
