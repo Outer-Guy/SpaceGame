@@ -276,6 +276,7 @@ theme_override_colors/default_color = Color(1, 1, 1, 1)
 text = "Username cannot be empty"
 
 [node name="LobbyNameLine" type="LineEdit" parent="."]
+layout_mode = 0
 offset_left = 216.0
 offset_top = -375.0
 offset_right = 708.0

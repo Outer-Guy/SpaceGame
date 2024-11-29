@@ -4,7 +4,7 @@
 [ext_resource type="PackedScene" uid="uid://ctwp3thgeuin1" path="res://Prefabs/PlayerVersions/001-Demo.tscn" id="2_yp1r0"]
 [ext_resource type="PackedScene" uid="uid://dvwb55aw2eyvw" path="res://Prefabs/Asteroid.tscn" id="3_8cg06"]
 [ext_resource type="Texture2D" uid="uid://eji7bt3bsuqi" path="res://Assets/star.png" id="3_phx13"]
-[ext_resource type="PackedScene" uid="uid://cifbqas8f68ko" path="res://Prefabs/objective.tscn" id="5_5okbe"]
+[ext_resource type="PackedScene" uid="uid://2almj5qn6t8o" path="res://Prefabs/objective.tscn" id="5_5okbe"]
 
 [sub_resource type="Gradient" id="Gradient_x5ky3"]
 colors = PackedColorArray(0, 0, 0, 1, 0.0822467, 0.0806, 0.13, 1)

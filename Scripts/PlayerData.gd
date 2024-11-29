@@ -182,8 +182,8 @@ func set_player_data(serialized_data : Array) -> void :
 
 #region BROADCASTING
 
-var broadcast_interval_in_seconds : float = 1
-var broadcast_address : String = '192.168.255.255'
+var broadcast_interval_in_seconds : float = 5
+var broadcast_address : String = '255.255.255.255'
 
 var lobby_info : Dictionary
 var all_lobby_data : Array = []
@@ -208,9 +208,8 @@ func setup_listener() -> void :
 		print(error)
 		return
 	
-	listen_timer_active = true
-	
 	print("listen set up to port " + str(listen_port))
+	listen_timer_active = true
 
 func setup_broadcast(lobbyName : String) -> void:
 	lobby_info.name = lobbyName
@@ -221,7 +220,7 @@ func setup_broadcast(lobbyName : String) -> void:
 	
 	broadcaster = PacketPeerUDP.new()
 	broadcaster.set_broadcast_enabled(true)
-	broadcaster.set_dest_address(broadcast_address, GameManager.port)
+	broadcaster.set_dest_address(broadcast_address, listen_port)
 	
 	var error : Error = broadcaster.bind(broadcast_port)
 	if error :
@@ -229,22 +228,23 @@ func setup_broadcast(lobbyName : String) -> void:
 		print(error)
 		return
 	
-	broadcast_timer_active = true
-	
 	print("broadcast set up to port " + str(broadcast_port))
+	
+	broadcast_timer_active = true
 
 func _on_broadcast_timer_timeout() -> void:
 	lobby_info.playerCount = PlayerData.all_data.size()
-	var error : Error = broadcaster.put_packet(JSON.stringify(lobby_info).to_ascii_buffer())
+	var error : Error = broadcaster.put_packet(JSON.stringify(lobby_info).to_utf8_buffer())
 	if error :
 		printerr("Error while sending broadcast packet")
 		printerr(error)
+	else : print ("Packet sent.")
 
 func _on_listen_timer_timeout() -> void :
 	if listener == null : return
 	if listener.get_available_packet_count() > 0 :
+		var data_recieved : Dictionary = JSON.parse_string(listener.get_packet().get_string_from_utf8())
 		print("Packet recieved from " + str(listener.get_packet_ip()) + ":" + str(listener.get_packet_port()))
-		var data_recieved : Dictionary = JSON.parse_string(listener.get_packet().get_string_from_ascii())
 		for data : Dictionary in all_lobby_data:
 			if data.ip == data_recieved.ip : return
 		all_lobby_data.append(data_recieved)
