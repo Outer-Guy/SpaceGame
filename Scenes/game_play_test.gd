@@ -8,6 +8,7 @@ signal OnTimerChange(newTime : int)
 @export var follow_camera : bool = true
 
 @export var points : int
+@export var startingPoints : int = 1
 @export var timer : float = 3 
 
 func _ready() -> void:
@@ -24,7 +25,10 @@ func _ready() -> void:
 		new_player.global_position = spawnPoints[index].global_position
 		index += 1
 	if multiplayer.is_server():
-		onSpawnObjective.rpc(Vector2(randf_range(100,300),randf_range(100,300)))
+		while startingPoints > 0:
+			onSpawnObjective.rpc(Vector2(randf_range(100,1100),randf_range(100,500)))
+			startingPoints -= 1
+			print("SpawnedPoint")
 		
 func _process(delta: float) -> void:
 	timer -= delta

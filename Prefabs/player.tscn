@@ -1,74 +1,71 @@
-[gd_scene load_steps=6 format=3 uid="uid://deq633jirwd41"]
+[gd_scene load_steps=6 format=3 uid="uid://bl285cb5yq4nq"]
 
-[ext_resource type="Texture2D" uid="uid://b8433osba5qn4" path="res://icon.svg" id="1_xosu4"]
+[ext_resource type="Texture2D" uid="uid://b8433osba5qn4" path="res://icon.svg" id="1_vders"]
 
 [sub_resource type="GDScript" id="GDScript_v5a8b"]
 script/source = "extends CharacterBody2D
 
-@export_category(\"Movement\")
+@export_category(\"Base\")
+@export_subgroup(\"Mass\")
+@export_range(0,100) var RecievingMass: float  = 1
+@export_range(0,100) var AppliedMass: float  = 1
+@export_range(0,100) var GravityMass: float  = 1
+@export_subgroup(\"Movement\")
 @export var MAXSPEED: float = 300
 @export var ACCELERATION: float = 0.01
 #@export var SPEEDPOWER: float = 2
-@export_range(0,0.5) var Rotation: float = 1
+@export_subgroup(\"Rotation\")
+@export_range(0,1) var Rotation: float = 1
 @export_range(0,1) var AttackAngle: float = 1
-@export_range(0,0.5) var RecenterStrenght: float = 1
 @export_category(\"HookPhysics\")
-@export_range(0,1000) var reelingMaxForce: float  = 100
-@export_range(0,0.5) var reelingLerp: float  = 0.75
-@export var reelingAcceleration: float  = 0.01
-@export_range(0,40) var DistanceStrength: int  = 1
-@export_range(0,1000,10) var minDistanceRope: int  = 40
+@export_subgroup(\"Reel\")
+@export var reelingMaxForce: float  = 100
+@export_range(0,1) var reelingLerp: float  = 0.75
+@export var reelingAcceleration: float  = 0.75
+@export var DistanceStrength: float  = 1
+@export var minDistanceRope: float  = 4
+@export_subgroup(\"Rope\")
 @export_range(0,1) var RopeTension: float  = 0.75
-@export_range(0,0.2) var RopeDampening: float  = 0.75
 
-@export var TRYHOOK : bool = false
-@export var CLICKPOSITION: Vector2
-@export var tempD: Dictionary
-var vPerpendicularVelocity : Vector2
+var TRYHOOK : bool = false
+var CLICKPOSITION: Vector2
+var tempD: Dictionary
+var RelativeHookAngle : Vector2
 var AcSpeed : float
 var ObjectiveDirection : Vector2
-var RotationSpeed: float
 var assigned_id : int
-var HookDif : Vector2
-
-@export var activate_logs : bool = false 
 
 func _ready() -> void:
-	$MultiplayerSynchronizer.set_multiplayer_authority(assigned_id)
-	vPerpendicularVelocity = Vector2.RIGHT
+	RelativeHookAngle = Vector2.RIGHT
 	velocity = Vector2.RIGHT
-	ObjectiveDirection  = vPerpendicularVelocity.normalized()
+	ObjectiveDirection  = RelativeHookAngle.normalized()
+	$MultiplayerSynchronizer.set_multiplayer_authority(assigned_id)
 	pass # Replace with function body.
 	
 
 
 func _physics_process(_delta: float) -> void:
-	
-	#print(\"velocity: \", velocity)
+	if !$MultiplayerSynchronizer.is_multiplayer_authority() : return
 	ConstantSpeed()
 	if TRYHOOK:
 		HookLogic()
 		pass
 	if !tempD.is_empty():
-		ObjectiveDirection = lerp(vPerpendicularVelocity.normalized(),(tempD.get(\"collider\").position - position).normalized(),AttackAngle)
-		ObjectiveDirection = lerp(transform.x.normalized(), ObjectiveDirection, Rotation)
+		ObjectiveDirection = lerp(RelativeHookAngle.normalized(),(tempD.get(\"collider\").position - position).normalized(),AttackAngle)
 		#ObjectiveDirection = lerp(velocity.normalized(),(tempD.get(\"collider\").position - position).normalized(),AttackAngle)
 	else:
-		ObjectiveDirection = lerp(transform.x.normalized(), velocity.normalized(), RecenterStrenght)
-		ObjectiveDirection = lerp(transform.x.normalized(), ObjectiveDirection, Rotation)
+		#ObjectiveDirection = velocity
 		pass
 	
 	transform = transform.orthonormalized()
 	move_and_slide()
 	queue_redraw()
 	#look_at(position+velocity)
-	look_at(ObjectiveDirection + position)
+	look_at(lerp(transform.x.normalized(), ObjectiveDirection, Rotation) + position)
 	
 #Handles touch input
 func _unhandled_input(event: InputEvent) -> void:
-	if !$MultiplayerSynchronizer.is_multiplayer_authority() : 
-		return
-	
+	if !$MultiplayerSynchronizer.is_multiplayer_authority() : return
 	if event is InputEventScreenTouch:
 		TRYHOOK = event.pressed
 		CLICKPOSITION = event.position
@@ -77,28 +74,38 @@ func _unhandled_input(event: InputEvent) -> void:
 
 #Handles Hook Physics
 func HookLogic() -> void:
-#region RaycastToTouch
+#region SphereCastToTouch
 	var space_state: PhysicsDirectSpaceState2D = get_world_2d().direct_space_state
-	var query: PhysicsRayQueryParameters2D = PhysicsRayQueryParameters2D.create(global_position, CLICKPOSITION)
-	var result: Dictionary = space_state.intersect_ray(query)
-	tempD = result
+	var query: PhysicsShapeQueryParameters2D = PhysicsShapeQueryParameters2D.new()
+	var queryShape : CircleShape2D = CircleShape2D.new()
+	queryShape.radius = 25
+	query.shape = queryShape
+	query.transform = Transform2D(0,Vector2.ONE,0,CLICKPOSITION)
+	var result : Array[Dictionary] = space_state.intersect_shape(query)
+	var minDistance : float = INF
+	for collisions : Dictionary in result:
+		if collisions.get(\"collider\") == self:
+			return
+		if(Vector2(CLICKPOSITION - collisions.get(\"collider\").position).length() <= minDistance):
+			tempD = collisions
+			minDistance = Vector2(CLICKPOSITION - collisions.get(\"collider\").position).length()
+	print(tempD.get(\"collider\"))
 #endregion
 	
 	if !result.is_empty():
 	#region RelativeHookAngle
-		HookDif = tempD.get(\"collider\").position - position
+		var HookDif : Vector2 = tempD.get(\"collider\").position - position
 		var vPerpendicular : Vector2  = Vector2(-HookDif.y,HookDif.x).normalized()
-		#var vPerpendicularVelocity : Vector2 = (velocity.dot(vPerpendicular)/vPerpendicular.length_squared())* vPerpendicular
-		vPerpendicularVelocity = velocity.project(vPerpendicular)
+		var vPerpendicularVelocity : Vector2 = (velocity.dot(vPerpendicular)/vPerpendicular.length_squared())* vPerpendicular
+		RelativeHookAngle = vPerpendicularVelocity
 		#endregion
 		
 		#Cast velocity to perpendicular force
-		var PerpendicularForce : Vector2 = lerp(velocity, vPerpendicularVelocity, RopeTension + pow(velocity.length()/HookDif.length(),0.25)/10 )
-		print(pow(velocity.length()/HookDif.length(),0.5)/10 )
-		#PerpendicularForce -= velocity * RopeDampening
+		var PerpendicularForce : Vector2 = lerp(velocity, vPerpendicularVelocity,RopeTension)
+		#PerpendicularForce -= velocity
 		#var PerpendicularForce : Vector2 = lerp(vPerpendicularVelocity, velocity.length() * vPerpendicularVelocity.normalized(),RopeTension)
 		#PerpendicularForce -= velocity
-		velocity = PerpendicularForce * (1-RopeDampening)
+		velocity = PerpendicularForce
 		#print(\"PerpendicularForce: \", PerpendicularForce)
 		
 		
@@ -111,36 +118,34 @@ func HookLogic() -> void:
 		#velocity += Movement
 		#print(\"Movement: \", Movement)
 		
-		var TargetSpeed : float = reelingAcceleration + (HookDif.length() - minDistanceRope) ** DistanceStrength
-		var Movement : float = lerpf(0, TargetSpeed, reelingLerp )
+		var TargetSpeed : float = reelingAcceleration + (HookDif.length() - minDistanceRope) * DistanceStrength
+		var Movement : float = lerpf(0, TargetSpeed, reelingLerp)
 		#Movement -= velocity
 		Movement = clampf(Movement, 0, reelingMaxForce)
 		velocity += Movement * HookDif.normalized()
-		if activate_logs : print(\"Movement: \", Movement)
+		#print(\"Movement: \", Movement)
 		#endregion
 		
 		#Vector2 TargetSpeed = 
 	else:
 		TRYHOOK = false
-		vPerpendicularVelocity = velocity.normalized() 
+		RelativeHookAngle = velocity.normalized() 
 		
 	
 
 func ConstantSpeed() -> void:
-	#var SPEEDFORCE : Vector2 = ((MAXSPEED * vPerpendicularVelocity.normalized() - velocity) * ACCELERATION)
+	#var SPEEDFORCE : Vector2 = ((MAXSPEED * RelativeHookAngle.normalized() - velocity) * ACCELERATION)
 	#SPEEDFORCE = SPEEDFORCE.length() ** SPEEDPOWER * SPEEDFORCE.normalized()  #+ velocity.length()
 	#velocity +=  SPEEDFORCE 
 	#var SPEEDFORCE : Vector2 = ((MAXSPEED * transform.x.normalized() - velocity) * ACCELERATION)
 	#SPEEDFORCE = SPEEDFORCE.length() ** SPEEDPOWER * transform.x.normalized()  #+ velocity.length()
 	#velocity +=  SPEEDFORCE 
-	var SPEEDFORCE : float = absf((MAXSPEED - velocity.project(transform.x).length()) * ACCELERATION) 
+	var SPEEDFORCE : float = ((MAXSPEED - velocity.length()) * ACCELERATION) 
 	velocity +=  SPEEDFORCE * transform.x.normalized()
 	#print(SPEEDFORCE)
-#velocity = Vector2(SPEEDFORCE*cos(vPerpendicularVelocity),SPEEDFORCE* sin(vPerpendicularVelocity))
-#velocity = (velocity.length() + SPEEDFORCE) * lerp(velocity.normalized(),vPerpendicularVelocity.normalized(),RopeTension
-
-func isMultiplayerAuthority() -> bool:
-	return $MultiplayerSynchronizer.is_multiplayer_authority()
+#velocity = Vector2(SPEEDFORCE*cos(RelativeHookAngle),SPEEDFORCE* sin(RelativeHookAngle))
+#velocity = (velocity.length() + SPEEDFORCE) * lerp(velocity.normalized(),RelativeHookAngle.normalized(),RopeTension
+	
 
 func _draw() -> void:
 	draw_line(Vector2.ZERO, velocity.length() * Vector2.RIGHT,Color.WHITE,-1)
@@ -162,34 +167,22 @@ script/source = "extends Sprite2D
 	#look_at(position + get_parent().velocity)
 "
 
-[sub_resource type="SceneReplicationConfig" id="SceneReplicationConfig_e8j5o"]
+[sub_resource type="SceneReplicationConfig" id="SceneReplicationConfig_bdye0"]
 properties/0/path = NodePath(".:position")
 properties/0/spawn = true
-properties/0/replication_mode = 1
-properties/1/path = NodePath(".:Rotation")
+properties/0/replication_mode = 2
+properties/1/path = NodePath(".:rotation")
 properties/1/spawn = true
-properties/1/replication_mode = 1
-properties/2/path = NodePath(".:TRYHOOK")
-properties/2/spawn = true
-properties/2/replication_mode = 2
-properties/3/path = NodePath(".:CLICKPOSITION")
-properties/3/spawn = true
-properties/3/replication_mode = 2
-properties/4/path = NodePath(".:tempD")
-properties/4/spawn = true
-properties/4/replication_mode = 2
+properties/1/replication_mode = 2
 
 [node name="Player" type="CharacterBody2D"]
+motion_mode = 1
 script = SubResource("GDScript_v5a8b")
-Rotation = 0.5
-AttackAngle = 0.5
-RecenterStrenght = 0.5
-reelingLerp = 0.113
-reelingAcceleration = 0.1
-DistanceStrength = 6
-minDistanceRope = 50
-RopeTension = 0.0
-RopeDampening = 0.0
+MAXSPEED = 150.0
+reelingLerp = 0.194
+reelingAcceleration = 0.01
+DistanceStrength = 2.0
+RopeTension = 0.121
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 scale = Vector2(0.3, 0.3)
@@ -197,8 +190,8 @@ shape = SubResource("CircleShape2D_fbmn4")
 
 [node name="Sprite2D" type="Sprite2D" parent="."]
 scale = Vector2(0.3, 0.3)
-texture = ExtResource("1_xosu4")
+texture = ExtResource("1_vders")
 script = SubResource("GDScript_8cksp")
 
 [node name="MultiplayerSynchronizer" type="MultiplayerSynchronizer" parent="."]
-replication_config = SubResource("SceneReplicationConfig_e8j5o")
+replication_config = SubResource("SceneReplicationConfig_bdye0")

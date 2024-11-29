@@ -1,7 +1,7 @@
 [gd_scene load_steps=11 format=3 uid="uid://c1ia02k5bags2"]
 
 [ext_resource type="Script" path="res://Scenes/game_play_test.gd" id="1_45rtu"]
-[ext_resource type="PackedScene" uid="uid://ctwp3thgeuin1" path="res://Prefabs/PlayerVersions/001-Demo.tscn" id="2_yp1r0"]
+[ext_resource type="PackedScene" uid="uid://bl285cb5yq4nq" path="res://Prefabs/player.tscn" id="2_m5ft7"]
 [ext_resource type="PackedScene" uid="uid://dvwb55aw2eyvw" path="res://Prefabs/Asteroid.tscn" id="3_8cg06"]
 [ext_resource type="Texture2D" uid="uid://eji7bt3bsuqi" path="res://Assets/star.png" id="3_phx13"]
 [ext_resource type="PackedScene" uid="uid://cifbqas8f68ko" path="res://Prefabs/objective.tscn" id="5_5okbe"]
@@ -38,9 +38,10 @@ func _on_node_2d_on_timer_change(newTime: int) -> void:
 
 [node name="Node2D" type="Node2D"]
 script = ExtResource("1_45rtu")
-player_prefab = ExtResource("2_yp1r0")
+player_prefab = ExtResource("2_m5ft7")
 objective_prefab = ExtResource("5_5okbe")
 follow_camera = false
+startingPoints = 6
 timer = 10.0
 
 [node name="CPUParticles2D" type="CPUParticles2D" parent="."]
