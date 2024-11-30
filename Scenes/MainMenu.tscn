@@ -58,11 +58,9 @@ func _on_start_host_button_down() -> void:
 
 func _on_start_client_button_down() -> void:
 	if !username_not_null() : return
-	GameManager.address = get_address_from_line()
 	create_client(get_address_from_line(), should_log)
 
 func on_join_server(ip : String) -> void :
-	GameManager.address = ip
 	create_client(ip, should_log)
 
 func _on_single_player_button_down() -> void:
@@ -74,17 +72,8 @@ func _on_single_player_button_down() -> void:
 
 func create_server(log_active : bool = false) -> void :
 	peer = ENetMultiplayerPeer.new()
-	var error : Error = 1
-	while(error):
-		error = peer.create_server(game_hosting_port, GameManager.max_players)
-		if error:
-			if log_active : printerr(\"Failed to Host at port: \" + str(game_hosting_port))
-			if log_active : printerr(error)
-		game_hosting_port +=1
-		if(game_hosting_port == GameManager.port + 32):
-			return
 	
-	error = peer.create_server(game_hosting_port, GameManager.max_players)
+	var error : Error = peer.create_server(game_hosting_port, GameManager.max_players)
 	if error:
 		if log_active : printerr(\"Failed to Host at port: \" + str(game_hosting_port))
 		if log_active : printerr(error)
@@ -254,9 +243,9 @@ anchor_top = 1.0
 anchor_right = 0.5
 anchor_bottom = 1.0
 offset_left = -329.0
-offset_top = 57.0
+offset_top = 56.0
 offset_right = -121.0
-offset_bottom = 191.0
+offset_bottom = 190.0
 grow_horizontal = 2
 grow_vertical = 0
 text = "Join as Client"
@@ -312,12 +301,12 @@ offset_bottom = 40.0
 script = SubResource("GDScript_wliye")
 
 [node name="LineEdit" type="LineEdit" parent="ServerAddressInfo"]
+visible = false
 layout_mode = 0
 offset_left = 72.0
 offset_top = -316.0
 offset_right = 269.0
 offset_bottom = -285.0
-text = "192.168."
 placeholder_text = "192.168.0.161"
 
 [node name="Address" type="RichTextLabel" parent="ServerAddressInfo/LineEdit"]
@@ -335,7 +324,6 @@ offset_left = -236.0
 offset_top = -316.0
 offset_right = -51.0
 offset_bottom = -285.0
-button_pressed = true
 text = "Manual Address"
 
 [node name="ServerBrowser" type="VBoxContainer" parent="."]

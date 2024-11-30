@@ -34,8 +34,27 @@ func _ready() -> void :
 func _on_send_button_down() -> void:
 	if $MessageLine/LineEdit.text == \"\": return
 	
+	if $MessageLine/LineEdit.text.begins_with(\"/\") : 
+		run_command($MessageLine/LineEdit.text.substr(1))
+		return
+	
 	send_message.rpc(\": \" + $MessageLine/LineEdit.text)
 	$MessageLine/LineEdit.text = \"\"
+
+func run_command(cmdname : String) -> void :
+	$TextChat.text += \"\\n\"
+	match cmdname:
+		\"interfaces\":
+			$TextChat.text += str(IP.get_local_interfaces())
+			return
+		\"allip\":
+			$TextChat.text += str(IP.get_local_addresses())
+			return
+		\"ip\":
+			$TextChat.text += GameManager.address
+			return
+	
+	$TextChat.text += name + \" is an invalid command\"
 
 @rpc(\"any_peer\", \"call_local\")
 func send_message(msg : String) -> void:
@@ -190,7 +209,7 @@ offset_left = 891.0
 offset_top = 361.0
 offset_right = 1099.0
 offset_bottom = 454.0
-text = "Server ip:
+text = "Server IP:
 1234"
 label_settings = SubResource("LabelSettings_rivoo")
 horizontal_alignment = 1
