@@ -31,12 +31,12 @@ func on_peer_disconnected(id : int) -> void:
 
 # On succesful or failed connection, only client
 func on_connected_to_server() -> void:
-	if should_log : print(\"Succesfull connection to \" + GameManager.address)
+	if should_log : print(\"Succesfull connection\")
 	
 	PlayerData.on_player_connected.rpc_id(1, multiplayer.get_unique_id(), $UsernameLine.text)
 
 func on_connection_failed() -> void:
-	if should_log : print(\"Failed to connect to \" + GameManager.address)
+	if should_log : print(\"Failed to connect\")
 
 func handle_scene_transition() -> void :
 	PlayerData.set_gamestate.rpc(PlayerData.local.id, PlayerData.GAMESTATE.LOBBY)
@@ -108,6 +108,8 @@ func create_client(ip : String, log_active : bool = false) -> void :
 	peer.get_host().compress(compression_type)
 	multiplayer.set_multiplayer_peer(peer)
 	if log_active : print(\"Connection sent to: \" + ip)
+	
+	PlayerData.clean_up_broadcasting()
 
 func get_lobby_name_from_line() -> String :
 	if $LobbyNameLine.text != \"\":
@@ -172,7 +174,7 @@ func update_server_list() -> void :
 			new_server_info.set_data(data.name, data.ip, data.playerCount)
 			new_server_info.on_join_server_pressed.connect(on_join_server_pressed)
 			
-			$ServerInfoList.add_child(new_server_info)
+			add_child(new_server_info)
 			displayed_ips.append(data.ip)
 			displayed_nodes.append(new_server_info)
 		else:
@@ -401,9 +403,6 @@ vertical_alignment = 1
 layout_mode = 2
 
 [node name="HSeparator2" type="HSeparator" parent="ServerBrowser"]
-layout_mode = 2
-
-[node name="ServerInfoList" type="Control" parent="ServerBrowser"]
 layout_mode = 2
 
 [connection signal="timeout" from="DebugTimer" to="." method="_on_debug_timer_timeout"]

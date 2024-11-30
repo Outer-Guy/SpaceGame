@@ -62,7 +62,7 @@ func _process(delta : float) -> void:
 			broadcast_timer = 0
 	if listen_timer_active : 
 		listen_timer += delta
-		if listen_timer >= broadcast_interval_in_seconds : 
+		if listen_timer >= broadcast_interval_in_seconds/3 : 
 			_on_listen_timer_timeout()
 			listen_timer = 0
 
@@ -182,8 +182,8 @@ func set_player_data(serialized_data : Array) -> void :
 
 #region BROADCASTING
 
-var broadcast_interval_in_seconds : float = 1
-var broadcast_address : String = '192.168.255.255'
+var broadcast_interval_in_seconds : float = 6
+var broadcast_address : String = '255.255.255.255'
 
 var lobby_info : Dictionary
 var all_lobby_data : Array = []
@@ -208,20 +208,19 @@ func setup_listener() -> void :
 		print(error)
 		return
 	
+	# print("listen set up to port " + str(listen_port))
 	listen_timer_active = true
-	
-	print("listen set up to port " + str(listen_port))
 
 func setup_broadcast(lobbyName : String) -> void:
 	lobby_info.name = lobbyName
 	lobby_info.ip = GameManager.address
 	lobby_info.playerCount = all_data.size()
 	
-	print(lobby_info)
+	# print(lobby_info)
 	
 	broadcaster = PacketPeerUDP.new()
 	broadcaster.set_broadcast_enabled(true)
-	broadcaster.set_dest_address(broadcast_address, GameManager.port)
+	broadcaster.set_dest_address(broadcast_address, listen_port)
 	
 	var error : Error = broadcaster.bind(broadcast_port)
 	if error :
@@ -229,13 +228,13 @@ func setup_broadcast(lobbyName : String) -> void:
 		print(error)
 		return
 	
-	broadcast_timer_active = true
+	# print("broadcast set up to port " + str(broadcast_port))
 	
-	print("broadcast set up to port " + str(broadcast_port))
+	broadcast_timer_active = true
 
 func _on_broadcast_timer_timeout() -> void:
 	lobby_info.playerCount = PlayerData.all_data.size()
-	var error : Error = broadcaster.put_packet(JSON.stringify(lobby_info).to_ascii_buffer())
+	var error : Error = broadcaster.put_packet(JSON.stringify(lobby_info).to_utf8_buffer())
 	if error :
 		printerr("Error while sending broadcast packet")
 		printerr(error)
@@ -243,18 +242,28 @@ func _on_broadcast_timer_timeout() -> void:
 func _on_listen_timer_timeout() -> void :
 	if listener == null : return
 	if listener.get_available_packet_count() > 0 :
-		print("Packet recieved from " + str(listener.get_packet_ip()) + ":" + str(listener.get_packet_port()))
-		var data_recieved : Dictionary = JSON.parse_string(listener.get_packet().get_string_from_ascii())
-		for data : Dictionary in all_lobby_data:
-			if data.ip == data_recieved.ip : return
-		all_lobby_data.append(data_recieved)
+		var data_recieved : Dictionary = JSON.parse_string(listener.get_packet().get_string_from_utf8())
+		# print("Packet recieved from " + str(listener.get_packet_ip()) + ":" + str(listener.get_packet_port()))
+		data_recieved.ip = listener.get_packet_ip()
+		handle_lobby_data(data_recieved)
+
+func handle_lobby_data(new_data : Dictionary) -> void :
+	if all_lobby_data.is_empty() : 
+		all_lobby_data.append(new_data)
 		on_all_lobby_data_changed.emit()
+	
+	for data : Dictionary in all_lobby_data:
+		if data.ip == new_data.ip && data != new_data :
+			all_lobby_data.erase(data)
+			all_lobby_data.append(new_data)
+			on_all_lobby_data_changed.emit()
 
 func clean_up_broadcasting() -> void :
 	if listener != null : listener.close()
 	if broadcaster != null : broadcaster.close()
 	listen_timer_active = false
 	broadcast_timer_active = false
+	all_lobby_data.clear()
 
 #endregion
 
