@@ -42,7 +42,7 @@ player_prefab = ExtResource("2_m5ft7")
 objective_prefab = ExtResource("5_5okbe")
 follow_camera = false
 startingPoints = 6
-timer = 10.0
+timer = 90.0
 
 [node name="CPUParticles2D" type="CPUParticles2D" parent="."]
 z_index = -50
