@@ -210,6 +210,7 @@ func setup_listener() -> void :
 	
 	# print("listen set up to port " + str(listen_port))
 	listen_timer_active = true
+	_on_listen_timer_timeout()
 
 func setup_broadcast(lobbyName : String) -> void:
 	lobby_info.name = lobbyName
@@ -231,6 +232,7 @@ func setup_broadcast(lobbyName : String) -> void:
 	# print("broadcast set up to port " + str(broadcast_port))
 	
 	broadcast_timer_active = true
+	_on_broadcast_timer_timeout()
 
 func _on_broadcast_timer_timeout() -> void:
 	lobby_info.playerCount = PlayerData.all_data.size()

@@ -405,6 +405,9 @@ layout_mode = 2
 [node name="HSeparator2" type="HSeparator" parent="ServerBrowser"]
 layout_mode = 2
 
+[node name="Camera2D" type="Camera2D" parent="."]
+position = Vector2(182, -110)
+
 [connection signal="timeout" from="DebugTimer" to="." method="_on_debug_timer_timeout"]
 [connection signal="button_down" from="SinglePlayer" to="." method="_on_single_player_button_down"]
 [connection signal="button_down" from="Start Host" to="." method="_on_start_host_button_down"]
