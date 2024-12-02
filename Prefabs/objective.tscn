@@ -8,15 +8,13 @@ script/source = "extends Area2D
 signal Collected()
 
 func _on_body_entered(body: Node2D) -> void:
-	
-	print()
-	if body.name == \"Player\" && body.is_multiplayer_authority():
+	if body.name.contains(\"Player\") && body.is_multiplayer_authority():
 		OnCollected.rpc()
 		
 
 @rpc(\"any_peer\", \"call_local\")
 func OnCollected() -> void:
-	Collected.emit(self)
+	Collected.emit()
 	queue_free()
 	pass
 "

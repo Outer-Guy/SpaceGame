@@ -6,9 +6,6 @@ script/source = "extends Node2D
 
 var toogle : bool = false
 
-
-	
-
 func _on_start_game_button_down() -> void:
 	toogle = !toogle
 	if toogle : $\"Start Game\".text = \"READY!\"
@@ -17,7 +14,6 @@ func _on_start_game_button_down() -> void:
 
 @rpc(\"any_peer\", \"call_local\")
 func handle_ready(newState : bool) -> void:
-	print(\"set \" + str(multiplayer.get_remote_sender_id()) + \" to \" + str(newState))
 	PlayerData.set_ready.rpc(multiplayer.get_remote_sender_id(), newState)
 	
 	if PlayerData.all_ready() :
@@ -83,15 +79,12 @@ script/source = "extends Label
 
 
 func _ready() -> void:
-	if GameManager.points.find(0) != null:
-		GameManager.points.remove_at(GameManager.points.find(0))
+	GameManager.points.erase(0)
 	if GameManager.points.size() > 10:
 		GameManager.points.resize(10)
 	for point : int in GameManager.points:
 		text += str(point)
-		text += str('\\n')
-		text.c_unescape()
-		
+		text += \"\\n\"
 "
 
 [sub_resource type="GDScript" id="GDScript_8qhc8"]

@@ -202,6 +202,7 @@ var broadcast_port : int = GameManager.port + 1
 
 func setup_listener() -> void :
 	listener = PacketPeerUDP.new()
+	listener.set_broadcast_enabled(true)
 	var error : Error = listener.bind(listen_port)
 	if error :
 		print("Error setting up listen port " + str(listen_port))
