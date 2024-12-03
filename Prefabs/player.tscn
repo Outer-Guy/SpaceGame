@@ -17,7 +17,7 @@ script/source = "extends CharacterBody2D
 #@export var SPEEDPOWER: float = 2
 
 @export_subgroup(\"Rotation\")
-@export_range(0,1) var Rotation: float = 1
+@export_range(0,1) var rotation_weight: float = 1
 @export_range(0,1) var attack_angle: float = 1
 
 @export_subgroup(\"AutoAim\")
@@ -49,14 +49,14 @@ var click_position : Vector2
 
 var proyected_velocity : Vector2
 var AcSpeed : float
-var ObjectiveDirection : Vector2
+var objective_direction : Vector2
 
 # Multiplayer ID controlling this player
 var assigned_id : int
 
 func _ready() -> void:
 	velocity = Vector2.RIGHT
-	ObjectiveDirection  = proyected_velocity.normalized()
+	objective_direction  = proyected_velocity.normalized()
 	
 	$MultiplayerSynchronizer.set_multiplayer_authority(assigned_id)
 	
@@ -72,12 +72,12 @@ func _physics_process(_delta: float) -> void:
 	ConstantSpeed()
 	if grappled: 
 		HookLogic()
-		ObjectiveDirection = lerp(proyected_velocity.normalized(),(attached_object.collider.position - position).normalized(), attack_angle)
+		objective_direction = lerp(proyected_velocity.normalized(),(attached_object.collider.position - position).normalized(), attack_angle)
 	
 	transform = transform.orthonormalized()
 	move_and_slide()
 	queue_redraw()
-	look_at(lerp(transform.x.normalized(), ObjectiveDirection, Rotation) + position)
+	look_at(lerp(transform.x.normalized(), objective_direction, rotation_weight) + position)
 	
 #Handles touch input
 func _unhandled_input(event: InputEvent) -> void:
@@ -142,7 +142,6 @@ properties/1/replication_mode = 2
 [node name="Player" type="CharacterBody2D"]
 motion_mode = 1
 script = SubResource("GDScript_v5a8b")
-MAXSPEED = 150.0
 auto_aim_radius = 25.0
 RopeTension = 0.121
 
