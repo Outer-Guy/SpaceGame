@@ -1,0 +1,121 @@
+[gd_scene load_steps=3 format=3 uid="uid://debusc5bdv2kj"]
+
+[ext_resource type="Texture2D" uid="uid://8lebfatu8l8h" path="res://Assets/pauseButton.png" id="1_yfn6l"]
+
+[sub_resource type="GDScript" id="GDScript_62h7d"]
+resource_name = "OptionsMenu"
+script/source = "extends Control
+
+var pauseButton : Button
+var menuContainer : Node
+var resumeButton : Button
+var optionsButton : Button
+var quitGame : Button
+@export var quitMode : QUIT_MODE = QUIT_MODE.QUIT_GAME
+
+signal prepareToQuit
+
+enum QUIT_MODE {
+	QUIT_GAME,
+	RETURN_TO_MENU,
+	RETURN_TO_LOBBY
+}
+
+func _ready() -> void:
+	pauseButton = $PauseButton
+	menuContainer = $Control
+	resumeButton = $Control/VBoxContainer/ResumeGame
+	optionsButton = $Control/VBoxContainer/Options
+	quitGame = $Control/VBoxContainer/QuitGame
+
+func _on_pause_button_down() -> void:
+	menuContainer.show()
+
+func _on_resume_game_button_down() -> void:
+	menuContainer.hide()
+
+func _on_quit_game_button_down() -> void:
+	prepareToQuit.emit()
+	match quitMode :
+		QUIT_MODE.QUIT_GAME:
+			get_tree().quit()
+		QUIT_MODE.RETURN_TO_MENU:
+			GameManager.load_scene(\"res://Scenes/MainMenu.tscn\")
+		QUIT_MODE.RETURN_TO_LOBBY:
+			GameManager.load_scene(\"res://Scenes/MultiplayerLobby.tscn\")
+"
+
+[node name="OptionsMenu" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 1
+script = SubResource("GDScript_62h7d")
+
+[node name="PauseButton" type="Button" parent="."]
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -87.0
+offset_bottom = 87.0
+grow_horizontal = 0
+focus_mode = 0
+icon = ExtResource("1_yfn6l")
+flat = true
+icon_alignment = 1
+expand_icon = true
+
+[node name="Control" type="Control" parent="."]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Panel" type="Panel" parent="Control"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="Control"]
+layout_mode = 1
+anchors_preset = 13
+anchor_left = 0.5
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -227.0
+offset_right = 227.0
+grow_horizontal = 2
+grow_vertical = 2
+alignment = 1
+
+[node name="ResumeGame" type="Button" parent="Control/VBoxContainer"]
+custom_minimum_size = Vector2(0, 75)
+layout_mode = 2
+size_flags_vertical = 4
+text = "Resume Game"
+
+[node name="Options" type="Button" parent="Control/VBoxContainer"]
+custom_minimum_size = Vector2(0, 75)
+layout_mode = 2
+size_flags_vertical = 4
+text = "Options"
+
+[node name="QuitGame" type="Button" parent="Control/VBoxContainer"]
+custom_minimum_size = Vector2(0, 75)
+layout_mode = 2
+size_flags_vertical = 4
+text = "Quit Game"
+
+[connection signal="button_down" from="PauseButton" to="." method="_on_pause_button_down"]
+[connection signal="button_down" from="Control/VBoxContainer/ResumeGame" to="." method="_on_resume_game_button_down"]
+[connection signal="button_down" from="Control/VBoxContainer/QuitGame" to="." method="_on_quit_game_button_down"]

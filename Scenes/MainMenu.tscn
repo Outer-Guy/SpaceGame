@@ -1,6 +1,7 @@
 [gd_scene load_steps=6 format=3 uid="uid://bi0m7wrpvd08l"]
 
-[ext_resource type="PackedScene" uid="uid://c67bcrwpuhy30" path="res://Prefabs/server_info_template.tscn" id="1_7mtlk"]
+[ext_resource type="PackedScene" uid="uid://debusc5bdv2kj" path="res://Prefabs/OptionsMenu.tscn" id="1_0oto3"]
+[ext_resource type="PackedScene" uid="uid://dc0at65pqjggx" path="res://Prefabs/server_browser.tscn" id="2_1skox"]
 
 [sub_resource type="GDScript" id="GDScript_ikndx"]
 resource_name = "MainMenu"
@@ -13,6 +14,13 @@ script/source = "extends Control
 
 var peer : ENetMultiplayerPeer
 
+var username_line : LineEdit
+var lobby_name_line : LineEdit
+var address_line : LineEdit
+var username_warning : Label
+var address_checkbox : CheckBox
+
+
 func _ready() -> void:
 	multiplayer.peer_connected.connect(on_peer_connected)
 	multiplayer.peer_disconnected.connect(on_peer_disconnected)
@@ -20,7 +28,13 @@ func _ready() -> void:
 	multiplayer.connection_failed.connect(on_connection_failed)
 	PlayerData.on_all_data_set.connect(handle_scene_transition)
 	
-	$ServerBrowser.on_join_server.connect(on_join_server)
+	$MainMenu/BottomFrame/ServerBrowser.on_join_server.connect(on_join_server)
+	
+	username_line = $MainMenu/FirstLine/UsernameInput/UsernameLine
+	username_warning = $MainMenu/WariningLabel
+	lobby_name_line = $MainMenu/FirstLine/LobbyNameInput/LobbyNameLine
+	address_line = $MainMenu/ServerAddressInfo/LineEdit
+	address_checkbox = $MainMenu/ServerAddressInfo/Checkbox
 
 # On every connection and disconnection, server and client
 func on_peer_connected(id : int) -> void:
@@ -33,7 +47,7 @@ func on_peer_disconnected(id : int) -> void:
 func on_connected_to_server() -> void:
 	if should_log : print(\"Succesfull connection\")
 	
-	PlayerData.on_player_connected.rpc_id(1, multiplayer.get_unique_id(), $UsernameLine.text)
+	PlayerData.on_player_connected.rpc_id(1, multiplayer.get_unique_id(), username_line.text)
 
 func on_connection_failed() -> void:
 	if should_log : print(\"Failed to connect\")
@@ -43,16 +57,16 @@ func handle_scene_transition() -> void :
 	GameManager.load_scene(\"res://Scenes/MultiplayerLobby.tscn\")
 
 func username_not_null() -> bool :
-	if($UsernameLine.text == \"\"): 
-		$UsernameLine/Warning.show()
+	if(username_line.text == \"\"): 
+		username_warning.show()
 		return false
 	else :
-		$UsernameLine/Warning.hide()
+		username_warning.hide()
 		return true
 
 func _on_start_host_button_down() -> void:
 	if !username_not_null() : return
-	PlayerData.create_player_data(multiplayer.get_unique_id(), $UsernameLine.text)
+	PlayerData.create_player_data(multiplayer.get_unique_id(), username_line.text)
 	create_server(should_log)
 	handle_scene_transition()
 
@@ -66,7 +80,7 @@ func on_join_server(ip : String) -> void :
 func _on_single_player_button_down() -> void:
 	if !username_not_null() : return
 	create_server(should_log)
-	PlayerData.create_player_data(multiplayer.get_unique_id(), $UsernameLine.text)
+	PlayerData.create_player_data(multiplayer.get_unique_id(), username_line.text)
 	PlayerData.set_gamestate(1, PlayerData.GAMESTATE.PLAYING)
 	GameManager.load_scene(\"res://Scenes/GamePlayTest.tscn\")
 
@@ -101,14 +115,14 @@ func create_client(ip : String, log_active : bool = false) -> void :
 	PlayerData.clean_up_broadcasting()
 
 func get_lobby_name_from_line() -> String :
-	if $LobbyNameLine.text != \"\":
-			return $LobbyNameLine.text
-	return $UsernameLine.text + \"'s Game\"
+	if lobby_name_line.text != \"\":
+			return lobby_name_line.text
+	return username_line.text + \"'s Game\"
 
 func get_address_from_line() -> String :
-	if $ServerAddressInfo/Checkbox.button_pressed && $ServerAddressInfo/LineEdit.text != \"\":
-		return $ServerAddressInfo/LineEdit.text
-	return $ServerAddressInfo/LineEdit.placeholder_text
+	if address_checkbox.button_pressed && address_line.text != \"\":
+		return address_line.text
+	return address_line.placeholder_text
 
 
 func _on_debug_timer_timeout() -> void:
@@ -137,267 +151,148 @@ script/source = "extends Control
 
 func _on_checkbox_toggled(toggled_on: bool) -> void:
 	$LineEdit.visible = toggled_on
-"
-
-[sub_resource type="GDScript" id="GDScript_qnrtv"]
-resource_name = "ServerBrowser"
-script/source = "extends Control
-
-@export var server_info_template : PackedScene
-
-var displayed_ips : Array = []
-var displayed_nodes : Array = []
-
-signal on_join_server
-
-func _ready() -> void:
-	PlayerData.on_all_lobby_data_changed.connect(update_server_list)
-
-func update_server_list() -> void :
-	var all_lobby_ips : Array
-	
-	for data : Dictionary in PlayerData.all_lobby_data:
-		if !displayed_ips.has(data.ip):
-			var new_server_info : Node = server_info_template.instantiate()
-			
-			new_server_info.set_data(data.name, data.ip, data.playerCount)
-			new_server_info.on_join_server_pressed.connect(on_join_server_pressed)
-			
-			add_child(new_server_info)
-			displayed_ips.append(data.ip)
-			displayed_nodes.append(new_server_info)
-		else:
-			displayed_nodes[displayed_ips.find(data.ip)].set_data(data.name, data.ip, data.playerCount)
-		
-		all_lobby_ips.append(data.ip)
-	
-	for ip : String in displayed_ips :
-		if !all_lobby_ips.has(ip):
-			var node_to_remove : Node = displayed_nodes[displayed_ips.find(ip)]
-			
-			node_to_remove.on_join_server_pressed.disconnect()
-			remove_child(node_to_remove)
-			displayed_ips.erase(ip)
-			displayed_nodes.erase(node_to_remove)
-
-func on_join_server_pressed(ip : String) -> void :
-	on_join_server.emit(ip)
+	$AddressLabel.visible = toggled_on
 "
 
 [node name="Control" type="Control"]
 layout_mode = 3
-anchors_preset = 7
-anchor_left = 0.5
-anchor_top = 1.0
-anchor_right = 0.5
+anchors_preset = 15
+anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = -182.0
-offset_top = -221.0
-offset_right = -182.0
-offset_bottom = -221.0
 grow_horizontal = 2
-grow_vertical = 0
+grow_vertical = 2
+mouse_filter = 1
 script = SubResource("GDScript_ikndx")
 should_log = true
+
+[node name="MainMenu" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+alignment = 1
+
+[node name="FirstLine" type="HBoxContainer" parent="MainMenu"]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+alignment = 1
+
+[node name="UsernameInput" type="HBoxContainer" parent="MainMenu/FirstLine"]
+custom_minimum_size = Vector2(500, 0)
+layout_mode = 2
+alignment = 1
+
+[node name="UsernameLabel" type="Label" parent="MainMenu/FirstLine/UsernameInput"]
+custom_minimum_size = Vector2(100, 0)
+layout_mode = 2
+text = "Username:"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="UsernameLine" type="LineEdit" parent="MainMenu/FirstLine/UsernameInput"]
+custom_minimum_size = Vector2(350, 0)
+layout_mode = 2
+script = SubResource("GDScript_o8gq4")
+
+[node name="LobbyNameInput" type="HBoxContainer" parent="MainMenu/FirstLine"]
+custom_minimum_size = Vector2(500, 0)
+layout_mode = 2
+alignment = 1
+
+[node name="Label" type="Label" parent="MainMenu/FirstLine/LobbyNameInput"]
+custom_minimum_size = Vector2(100, 0)
+layout_mode = 2
+text = "Lobby Name:"
+
+[node name="LobbyNameLine" type="LineEdit" parent="MainMenu/FirstLine/LobbyNameInput"]
+custom_minimum_size = Vector2(350, 0)
+layout_mode = 2
+
+[node name="WariningLabel" type="Label" parent="MainMenu"]
+visible = false
+custom_minimum_size = Vector2(480, 0)
+layout_mode = 2
+size_flags_horizontal = 0
+text = "Username cannot be empty."
+horizontal_alignment = 2
+vertical_alignment = 2
+
+[node name="ServerAddressInfo" type="HBoxContainer" parent="MainMenu"]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+alignment = 1
+script = SubResource("GDScript_wliye")
+
+[node name="Checkbox" type="CheckBox" parent="MainMenu/ServerAddressInfo"]
+custom_minimum_size = Vector2(200, 0)
+layout_mode = 2
+text = "Manual Address"
+alignment = 1
+icon_alignment = 1
+
+[node name="AddressLabel" type="Label" parent="MainMenu/ServerAddressInfo"]
+visible = false
+custom_minimum_size = Vector2(80, 0)
+layout_mode = 2
+text = "Address:"
+horizontal_alignment = 1
+
+[node name="LineEdit" type="LineEdit" parent="MainMenu/ServerAddressInfo"]
+visible = false
+custom_minimum_size = Vector2(150, 0)
+layout_mode = 2
+placeholder_text = "192.168.0.161"
+
+[node name="BottomFrame" type="HBoxContainer" parent="MainMenu"]
+layout_mode = 2
+alignment = 1
+
+[node name="Buttons" type="VBoxContainer" parent="MainMenu/BottomFrame"]
+custom_minimum_size = Vector2(0, 350)
+layout_mode = 2
+size_flags_horizontal = 3
+alignment = 1
+
+[node name="SinglePlayer" type="Button" parent="MainMenu/BottomFrame/Buttons"]
+custom_minimum_size = Vector2(300, 100)
+layout_mode = 2
+size_flags_horizontal = 4
+text = "SinglePlayer"
+
+[node name="StartHost" type="Button" parent="MainMenu/BottomFrame/Buttons"]
+custom_minimum_size = Vector2(300, 100)
+layout_mode = 2
+size_flags_horizontal = 4
+text = "Start Host"
+
+[node name="StartClient" type="Button" parent="MainMenu/BottomFrame/Buttons"]
+custom_minimum_size = Vector2(300, 100)
+layout_mode = 2
+size_flags_horizontal = 4
+text = "Join as Client"
+
+[node name="ServerBrowser" parent="MainMenu/BottomFrame" instance=ExtResource("2_1skox")]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 2.0
+
+[node name="Control" type="Control" parent="MainMenu/BottomFrame"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 0.1
+
+[node name="OptionsMenu" parent="." instance=ExtResource("1_0oto3")]
+layout_mode = 1
 
 [node name="DebugTimer" type="Timer" parent="."]
 wait_time = 0.2
 one_shot = true
 autostart = true
 
-[node name="SinglePlayer" type="Button" parent="."]
-layout_mode = 1
-anchors_preset = 7
-anchor_left = 0.5
-anchor_top = 1.0
-anchor_right = 0.5
-anchor_bottom = 1.0
-offset_left = -328.0
-offset_top = -244.0
-offset_right = -120.0
-offset_bottom = -110.0
-grow_horizontal = 2
-grow_vertical = 0
-text = "SinglePlayer"
-
-[node name="Start Host" type="Button" parent="."]
-layout_mode = 1
-anchors_preset = 7
-anchor_left = 0.5
-anchor_top = 1.0
-anchor_right = 0.5
-anchor_bottom = 1.0
-offset_left = -328.0
-offset_top = -94.0
-offset_right = -120.0
-offset_bottom = 40.0
-grow_horizontal = 2
-grow_vertical = 0
-text = "Start Host"
-
-[node name="Start Client" type="Button" parent="."]
-layout_mode = 1
-anchors_preset = 7
-anchor_left = 0.5
-anchor_top = 1.0
-anchor_right = 0.5
-anchor_bottom = 1.0
-offset_left = -329.0
-offset_top = 56.0
-offset_right = -121.0
-offset_bottom = 190.0
-grow_horizontal = 2
-grow_vertical = 0
-text = "Join as Client"
-
-[node name="UsernameLine" type="LineEdit" parent="."]
-layout_mode = 0
-offset_left = -231.0
-offset_top = -375.0
-offset_right = 54.0
-offset_bottom = -344.0
-script = SubResource("GDScript_o8gq4")
-
-[node name="Username" type="RichTextLabel" parent="UsernameLine"]
-layout_mode = 0
-offset_left = -88.0
-offset_top = 4.0
-offset_right = 9.0
-offset_bottom = 44.0
-theme_override_colors/default_color = Color(1, 1, 1, 1)
-text = "Username:"
-
-[node name="Warning" type="RichTextLabel" parent="UsernameLine"]
-visible = false
-layout_mode = 0
-offset_left = 8.0
-offset_top = 38.0
-offset_right = 299.0
-offset_bottom = 78.0
-theme_override_colors/default_color = Color(1, 1, 1, 1)
-text = "Username cannot be empty"
-
-[node name="LobbyNameLine" type="LineEdit" parent="."]
-layout_mode = 0
-offset_left = 216.0
-offset_top = -375.0
-offset_right = 708.0
-offset_bottom = -344.0
-
-[node name="LobbyName" type="RichTextLabel" parent="LobbyNameLine"]
-layout_mode = 0
-offset_left = -110.0
-offset_top = 4.0
-offset_right = 23.0
-offset_bottom = 44.0
-theme_override_colors/default_color = Color(1, 1, 1, 1)
-text = "Lobby Name:"
-
-[node name="ServerAddressInfo" type="Control" parent="."]
-anchors_preset = 0
-offset_left = -87.0
-offset_right = -47.0
-offset_bottom = 40.0
-script = SubResource("GDScript_wliye")
-
-[node name="LineEdit" type="LineEdit" parent="ServerAddressInfo"]
-visible = false
-layout_mode = 0
-offset_left = 72.0
-offset_top = -316.0
-offset_right = 269.0
-offset_bottom = -285.0
-placeholder_text = "192.168.0.161"
-
-[node name="Address" type="RichTextLabel" parent="ServerAddressInfo/LineEdit"]
-layout_mode = 0
-offset_left = -72.0
-offset_top = 4.0
-offset_right = 25.0
-offset_bottom = 44.0
-theme_override_colors/default_color = Color(1, 1, 1, 1)
-text = "Address:"
-
-[node name="Checkbox" type="CheckBox" parent="ServerAddressInfo"]
-layout_mode = 0
-offset_left = -236.0
-offset_top = -316.0
-offset_right = -51.0
-offset_bottom = -285.0
-text = "Manual Address"
-
-[node name="ServerBrowser" type="VBoxContainer" parent="."]
-layout_mode = 0
-offset_left = -87.0
-offset_top = -272.0
-offset_right = 708.0
-offset_bottom = 162.0
-script = SubResource("GDScript_qnrtv")
-server_info_template = ExtResource("1_7mtlk")
-
-[node name="Label" type="Label" parent="ServerBrowser"]
-layout_mode = 2
-text = "Server Browser"
-horizontal_alignment = 1
-vertical_alignment = 1
-
-[node name="HSeparator" type="HSeparator" parent="ServerBrowser"]
-layout_mode = 2
-
-[node name="ServerInfoTitle" type="HBoxContainer" parent="ServerBrowser"]
-custom_minimum_size = Vector2(0, 60)
-layout_mode = 2
-
-[node name="VSeparator5" type="VSeparator" parent="ServerBrowser/ServerInfoTitle"]
-layout_mode = 2
-
-[node name="NameLabel" type="Label" parent="ServerBrowser/ServerInfoTitle"]
-layout_mode = 2
-size_flags_horizontal = 3
-text = "Lobby Name"
-horizontal_alignment = 1
-vertical_alignment = 1
-
-[node name="VSeparator" type="VSeparator" parent="ServerBrowser/ServerInfoTitle"]
-layout_mode = 2
-
-[node name="IPLabel" type="Label" parent="ServerBrowser/ServerInfoTitle"]
-layout_mode = 2
-size_flags_horizontal = 3
-text = "IP Address"
-horizontal_alignment = 1
-vertical_alignment = 1
-
-[node name="VSeparator2" type="VSeparator" parent="ServerBrowser/ServerInfoTitle"]
-layout_mode = 2
-
-[node name="PlayerCountLabel" type="Label" parent="ServerBrowser/ServerInfoTitle"]
-layout_mode = 2
-size_flags_horizontal = 3
-text = "Player Count"
-horizontal_alignment = 1
-vertical_alignment = 1
-
-[node name="VSeparator3" type="VSeparator" parent="ServerBrowser/ServerInfoTitle"]
-layout_mode = 2
-
-[node name="EmptyLabel" type="Label" parent="ServerBrowser/ServerInfoTitle"]
-layout_mode = 2
-size_flags_horizontal = 3
-horizontal_alignment = 1
-vertical_alignment = 1
-
-[node name="VSeparator4" type="VSeparator" parent="ServerBrowser/ServerInfoTitle"]
-layout_mode = 2
-
-[node name="HSeparator2" type="HSeparator" parent="ServerBrowser"]
-layout_mode = 2
-
-[node name="Camera2D" type="Camera2D" parent="."]
-position = Vector2(182, -110)
-
+[connection signal="toggled" from="MainMenu/ServerAddressInfo/Checkbox" to="MainMenu/ServerAddressInfo" method="_on_checkbox_toggled"]
+[connection signal="button_down" from="MainMenu/BottomFrame/Buttons/SinglePlayer" to="." method="_on_single_player_button_down"]
+[connection signal="button_down" from="MainMenu/BottomFrame/Buttons/StartHost" to="." method="_on_start_host_button_down"]
+[connection signal="button_down" from="MainMenu/BottomFrame/Buttons/StartClient" to="." method="_on_start_client_button_down"]
 [connection signal="timeout" from="DebugTimer" to="." method="_on_debug_timer_timeout"]
-[connection signal="button_down" from="SinglePlayer" to="." method="_on_single_player_button_down"]
-[connection signal="button_down" from="Start Host" to="." method="_on_start_host_button_down"]
-[connection signal="button_down" from="Start Client" to="." method="_on_start_client_button_down"]
-[connection signal="toggled" from="ServerAddressInfo/Checkbox" to="ServerAddressInfo" method="_on_checkbox_toggled"]

@@ -1,0 +1,114 @@
+[gd_scene load_steps=3 format=3 uid="uid://dc0at65pqjggx"]
+
+[ext_resource type="PackedScene" uid="uid://c67bcrwpuhy30" path="res://Prefabs/server_info_template.tscn" id="1_msuuf"]
+
+[sub_resource type="GDScript" id="GDScript_qnrtv"]
+resource_name = "ServerBrowser"
+script/source = "extends Control
+
+@export var server_info_template : PackedScene
+
+var displayed_ips : Array = []
+var displayed_nodes : Array = []
+
+signal on_join_server
+
+func _ready() -> void:
+	PlayerData.on_all_lobby_data_changed.connect(update_server_list)
+
+func update_server_list() -> void :
+	var all_lobby_ips : Array
+	
+	for data : Dictionary in PlayerData.all_lobby_data:
+		if !displayed_ips.has(data.ip):
+			var new_server_info : Node = server_info_template.instantiate()
+			
+			new_server_info.set_data(data.name, data.ip, data.playerCount)
+			new_server_info.on_join_server_pressed.connect(on_join_server_pressed)
+			
+			add_child(new_server_info)
+			displayed_ips.append(data.ip)
+			displayed_nodes.append(new_server_info)
+		else:
+			displayed_nodes[displayed_ips.find(data.ip)].set_data(data.name, data.ip, data.playerCount)
+		
+		all_lobby_ips.append(data.ip)
+	
+	for ip : String in displayed_ips :
+		if !all_lobby_ips.has(ip):
+			var node_to_remove : Node = displayed_nodes[displayed_ips.find(ip)]
+			
+			node_to_remove.on_join_server_pressed.disconnect()
+			remove_child(node_to_remove)
+			displayed_ips.erase(ip)
+			displayed_nodes.erase(node_to_remove)
+
+func on_join_server_pressed(ip : String) -> void :
+	on_join_server.emit(ip)
+"
+
+[node name="ServerBrowser" type="VBoxContainer"]
+offset_left = -87.0
+offset_top = -272.0
+offset_right = 708.0
+offset_bottom = 162.0
+script = SubResource("GDScript_qnrtv")
+server_info_template = ExtResource("1_msuuf")
+
+[node name="Label" type="Label" parent="."]
+layout_mode = 2
+text = "Server Browser"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="HSeparator" type="HSeparator" parent="."]
+layout_mode = 2
+
+[node name="ServerInfoTitle" type="HBoxContainer" parent="."]
+custom_minimum_size = Vector2(0, 60)
+layout_mode = 2
+
+[node name="VSeparator5" type="VSeparator" parent="ServerInfoTitle"]
+layout_mode = 2
+
+[node name="NameLabel" type="Label" parent="ServerInfoTitle"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Lobby Name"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="VSeparator" type="VSeparator" parent="ServerInfoTitle"]
+layout_mode = 2
+
+[node name="IPLabel" type="Label" parent="ServerInfoTitle"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "IP Address"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="VSeparator2" type="VSeparator" parent="ServerInfoTitle"]
+layout_mode = 2
+
+[node name="PlayerCountLabel" type="Label" parent="ServerInfoTitle"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Player Count"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="VSeparator3" type="VSeparator" parent="ServerInfoTitle"]
+layout_mode = 2
+
+[node name="EmptyLabel" type="Label" parent="ServerInfoTitle"]
+layout_mode = 2
+size_flags_horizontal = 3
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="VSeparator4" type="VSeparator" parent="ServerInfoTitle"]
+layout_mode = 2
+
+[node name="HSeparator2" type="HSeparator" parent="."]
+layout_mode = 2
