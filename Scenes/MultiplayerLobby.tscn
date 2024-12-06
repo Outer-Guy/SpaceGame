@@ -1,8 +1,10 @@
-[gd_scene load_steps=7 format=3 uid="uid://dclogvhfkhqrq"]
+[gd_scene load_steps=8 format=3 uid="uid://dclogvhfkhqrq"]
+
+[ext_resource type="PackedScene" uid="uid://debusc5bdv2kj" path="res://Prefabs/OptionsMenu.tscn" id="1_0mlm2"]
 
 [sub_resource type="GDScript" id="GDScript_7wo5v"]
 resource_name = "Ready"
-script/source = "extends Node2D
+script/source = "extends Control
 
 var toogle : bool = false
 
@@ -98,7 +100,13 @@ func _ready() -> void:
 	text += GameManager.address
 "
 
-[node name="MultiplayerLobby" type="Node2D"]
+[node name="MultiplayerLobby" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 script = SubResource("GDScript_7wo5v")
 
 [node name="Chat" type="Control" parent="."]
@@ -167,6 +175,7 @@ grow_vertical = 0
 text = "Send"
 
 [node name="Start Game" type="Button" parent="."]
+layout_mode = 1
 anchors_preset = 7
 anchor_left = 0.5
 anchor_top = 1.0
@@ -181,32 +190,38 @@ grow_vertical = 0
 text = "Start Game"
 
 [node name="Points" type="Label" parent="."]
-offset_left = 875.0
+layout_mode = 0
+offset_left = 736.0
 offset_top = 74.0
-offset_right = 1083.0
+offset_right = 944.0
 offset_bottom = 119.0
 text = "HIGH SCORES"
 label_settings = SubResource("LabelSettings_rivoo")
 
 [node name="Counter" type="Label" parent="."]
-offset_left = 925.0
+layout_mode = 0
+offset_left = 786.0
 offset_top = 132.0
-offset_right = 1030.0
+offset_right = 891.0
 offset_bottom = 177.0
 label_settings = SubResource("LabelSettings_rivoo")
 horizontal_alignment = 1
 script = SubResource("GDScript_yfq3g")
 
-[node name="Points2" type="Label" parent="."]
-offset_left = 891.0
-offset_top = 361.0
-offset_right = 1099.0
-offset_bottom = 454.0
+[node name="ServerIPLabel" type="Label" parent="."]
+layout_mode = 0
+offset_left = 855.0
+offset_top = 478.0
+offset_right = 1063.0
+offset_bottom = 571.0
 text = "Server IP:
 1234"
 label_settings = SubResource("LabelSettings_rivoo")
 horizontal_alignment = 1
 script = SubResource("GDScript_8qhc8")
+
+[node name="OptionsMenu" parent="." instance=ExtResource("1_0mlm2")]
+layout_mode = 1
 
 [connection signal="button_down" from="Chat/MessageLine/Send" to="Chat" method="_on_send_button_down"]
 [connection signal="button_down" from="Start Game" to="." method="_on_start_game_button_down"]
