@@ -181,10 +181,10 @@ anchor_left = 0.5
 anchor_top = 1.0
 anchor_right = 0.5
 anchor_bottom = 1.0
-offset_left = 893.0
-offset_top = 474.0
-offset_right = 1101.0
-offset_bottom = 608.0
+offset_left = 346.0
+offset_top = -154.0
+offset_right = 554.0
+offset_bottom = -20.0
 grow_horizontal = 2
 grow_vertical = 0
 text = "Start Game"
@@ -210,10 +210,10 @@ script = SubResource("GDScript_yfq3g")
 
 [node name="ServerIPLabel" type="Label" parent="."]
 layout_mode = 0
-offset_left = 855.0
-offset_top = 478.0
-offset_right = 1063.0
-offset_bottom = 571.0
+offset_left = 923.0
+offset_top = 389.0
+offset_right = 1131.0
+offset_bottom = 482.0
 text = "Server IP:
 1234"
 label_settings = SubResource("LabelSettings_rivoo")
