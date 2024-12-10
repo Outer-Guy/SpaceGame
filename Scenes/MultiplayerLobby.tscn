@@ -181,9 +181,9 @@ anchor_left = 0.5
 anchor_top = 1.0
 anchor_right = 0.5
 anchor_bottom = 1.0
-offset_left = 346.0
+offset_left = 388.0
 offset_top = -154.0
-offset_right = 554.0
+offset_right = 596.0
 offset_bottom = -20.0
 grow_horizontal = 2
 grow_vertical = 0
@@ -191,28 +191,28 @@ text = "Start Game"
 
 [node name="Points" type="Label" parent="."]
 layout_mode = 0
-offset_left = 736.0
-offset_top = 74.0
-offset_right = 944.0
-offset_bottom = 119.0
+offset_left = 1036.0
+offset_top = 90.0
+offset_right = 1244.0
+offset_bottom = 135.0
 text = "HIGH SCORES"
 label_settings = SubResource("LabelSettings_rivoo")
 
 [node name="Counter" type="Label" parent="."]
 layout_mode = 0
-offset_left = 786.0
-offset_top = 132.0
-offset_right = 891.0
-offset_bottom = 177.0
+offset_left = 1086.0
+offset_top = 148.0
+offset_right = 1191.0
+offset_bottom = 193.0
 label_settings = SubResource("LabelSettings_rivoo")
 horizontal_alignment = 1
 script = SubResource("GDScript_yfq3g")
 
 [node name="ServerIPLabel" type="Label" parent="."]
 layout_mode = 0
-offset_left = 923.0
+offset_left = 1033.0
 offset_top = 389.0
-offset_right = 1131.0
+offset_right = 1241.0
 offset_bottom = 482.0
 text = "Server IP:
 1234"

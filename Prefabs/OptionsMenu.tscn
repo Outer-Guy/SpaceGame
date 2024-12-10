@@ -57,17 +57,17 @@ script = SubResource("GDScript_62h7d")
 
 [node name="PauseButton" type="Button" parent="."]
 layout_mode = 1
-anchors_preset = 1
-anchor_left = 1.0
+anchors_preset = -1
+anchor_left = 0.924479
 anchor_right = 1.0
-offset_left = -87.0
-offset_bottom = 87.0
+anchor_bottom = 0.134259
 grow_horizontal = 0
 focus_mode = 0
 icon = ExtResource("1_yfn6l")
 flat = true
 icon_alignment = 1
 expand_icon = true
+metadata/_edit_use_anchors_ = true
 
 [node name="Control" type="Control" parent="."]
 visible = false

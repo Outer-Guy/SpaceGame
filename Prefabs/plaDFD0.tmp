@@ -1,4 +1,4 @@
-[gd_scene load_steps=13 format=3 uid="uid://bl285cb5yq4nq"]
+[gd_scene load_steps=5 format=3 uid="uid://bl285cb5yq4nq"]
 
 [ext_resource type="Texture2D" uid="uid://bvoptew6se7kx" path="res://Assets/Nave.png" id="1_8clb4"]
 
@@ -51,7 +51,6 @@ var proyected_velocity : Vector2
 var AcSpeed : float
 var objective_direction : Vector2
 
-
 # Multiplayer ID controlling this player
 var assigned_id : int
 
@@ -66,7 +65,6 @@ func _ready() -> void:
 	circle_shape  = CircleShape2D.new()
 	circle_shape.radius = auto_aim_radius
 	query.shape = circle_shape
-	$Line2D.add_point(position)
 
 func _physics_process(_delta: float) -> void:
 	if !$MultiplayerSynchronizer.is_multiplayer_authority() : return
@@ -75,16 +73,12 @@ func _physics_process(_delta: float) -> void:
 	if grappled: 
 		HookLogic()
 		objective_direction = lerp(proyected_velocity.normalized(),(attached_object.collider.position - position).normalized(), attack_angle)
+		#$Line2D.
 	
 	transform = transform.orthonormalized()
 	move_and_slide()
-	#queue_redraw()
+	queue_redraw()
 	look_at(lerp(transform.x.normalized(), objective_direction, rotation_weight) + position)
-	if grappled: 
-		$Line2D.set_point_position(1,attached_object.collider.position - position)
-		$Line2D.rotation = -rotation
-		$Line2D.width = 8 - pow(position.distance_to(attached_object.collider.position),0.5)/5
-		print($Line2D.width)
 	
 #Handles touch input
 func _unhandled_input(event: InputEvent) -> void:
@@ -92,9 +86,7 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event is not InputEventScreenTouch: return
 	
 	click_position = event.position
-	if !event.pressed: 
-		attached_object.clear()
-		$Line2D.remove_point(1)
+	if !event.pressed: attached_object.clear()
 	else:
 		#region AutoAim
 		query.transform = Transform2D(0,Vector2.ONE,0,click_position)
@@ -105,13 +97,9 @@ func _unhandled_input(event: InputEvent) -> void:
 			if collision.collider != self && click_collider_distance <= min_distance:
 				attached_object = collision
 				min_distance = click_collider_distance
-		
-		$Line2D.add_point(Vector2(attached_object.collider.position - position))
-		
 		#endregion
 	
 	grappled = !attached_object.is_empty()
-	
 
 #Handles Hook Physics
 func HookLogic() -> void:
@@ -127,20 +115,18 @@ func HookLogic() -> void:
 	velocity = lerp(velocity, proyected_velocity,RopeTension)
 	
 	#region Grapple Force
-	var target_speed : float = hook_distance.length() * reeling_acceleration + (hook_distance.length() - min_rope_distance) * distance_strength
+	var target_speed : float = reeling_acceleration + (hook_distance.length() - min_rope_distance) * distance_strength
 	var smoothed_speed : float = lerpf(0, target_speed, reeling_lerp_weight)
 	smoothed_speed = clampf(smoothed_speed, 0, reelingMaxForce)
 	velocity += smoothed_speed * hook_distance.normalized()
 	#endregion
 
 func ConstantSpeed() -> void:
-	var SPEEDFORCE : float = ((MAXSPEED - velocity.project(transform.x).length()) * ACCELERATION) 
+	var SPEEDFORCE : float = ((MAXSPEED - velocity.length()) * ACCELERATION) 
 	velocity +=  SPEEDFORCE * transform.x.normalized()
-	
 
 func _draw() -> void:
-	#draw_line(Vector2.ZERO, velocity.length()/5 * Vector2.LEFT,Color.WHITE,-1)
-	pass
+	draw_line(Vector2.ZERO, velocity.length()/5 * Vector2.LEFT,Color.WHITE,-1)
 "
 
 [sub_resource type="CapsuleShape2D" id="CapsuleShape2D_7rh4i"]
@@ -155,58 +141,12 @@ properties/1/path = NodePath(".:rotation")
 properties/1/spawn = true
 properties/1/replication_mode = 2
 
-[sub_resource type="Curve" id="Curve_lhwfi"]
-_data = [Vector2(0, 1), 0.0, 0.0, 0, 0, Vector2(1, 0), -3.15441, 0.0, 0, 0]
-point_count = 2
-
-[sub_resource type="Curve" id="Curve_15rje"]
-_data = [Vector2(0, 1), 0.0, 0.0, 0, 0, Vector2(1, 0), -1.25105, 0.0, 0, 0]
-point_count = 2
-
-[sub_resource type="Gradient" id="Gradient_3qsy0"]
-offsets = PackedFloat32Array(0, 0.776423, 1)
-colors = PackedColorArray(1, 0.966667, 0, 1, 0.61, 0, 0.0101665, 1, 0.29, 0, 0.00483326, 0)
-
-[sub_resource type="Gradient" id="Gradient_7p572"]
-offsets = PackedFloat32Array(0, 0.512195, 1)
-colors = PackedColorArray(1, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1)
-
-[sub_resource type="GDScript" id="GDScript_cbm2h"]
-script/source = "extends CPUParticles2D
-
-var Lifetime : float
-var parent : CharacterBody2D
-
-func _ready() -> void:
-	parent = get_parent()
-	parent.velocity.length()
-	Lifetime = lifetime
-	
-func _process(delta: float) -> void:
-	lifetime = lerpf(0,Lifetime,pow(parent.velocity.length(),0.5)/50)
-"
-
-[sub_resource type="Curve" id="Curve_8pwx0"]
-_data = [Vector2(0, 0.503743), 0.0, 0.0650283, 0, 0, Vector2(1, 1), 1.80919, 0.0, 0, 0]
-point_count = 2
-
-[sub_resource type="Gradient" id="Gradient_4h2m6"]
-offsets = PackedFloat32Array(0.268293, 1)
-colors = PackedColorArray(1, 1, 1, 1, 1, 1, 1, 0.129412)
-
-[sub_resource type="Gradient" id="Gradient_wn0k1"]
-colors = PackedColorArray(1, 1, 1, 0.760784, 0, 0, 0, 1)
-
 [node name="Player" type="CharacterBody2D"]
 motion_mode = 1
-wall_min_slide_angle = 0.0
 script = SubResource("GDScript_v5a8b")
 rotation_weight = 0.259
 attack_angle = 0.5
 auto_aim_radius = 25.0
-reeling_acceleration = 1.0
-distance_strength = 2.0
-min_rope_distance = 50.0
 RopeTension = 0.121
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
@@ -226,41 +166,3 @@ offset = Vector2(5.63, 0)
 replication_config = SubResource("SceneReplicationConfig_bdye0")
 
 [node name="Line2D" type="Line2D" parent="."]
-z_index = -5
-width = 2.0
-width_curve = SubResource("Curve_lhwfi")
-
-[node name="CPUParticles2D" type="CPUParticles2D" parent="."]
-z_index = -1
-position = Vector2(-24, 0)
-rotation = -3.14159
-amount = 32
-lifetime = 0.25
-emission_shape = 3
-emission_rect_extents = Vector2(1, 2)
-spread = 0.0
-gravity = Vector2(0, 0)
-initial_velocity_min = 496.94
-initial_velocity_max = 653.4
-scale_amount_min = 5.0
-scale_amount_max = 12.0
-scale_amount_curve = SubResource("Curve_15rje")
-color_ramp = SubResource("Gradient_3qsy0")
-color_initial_ramp = SubResource("Gradient_7p572")
-script = SubResource("GDScript_cbm2h")
-
-[node name="CPUParticles2D2" type="CPUParticles2D" parent="."]
-z_index = -1
-position = Vector2(-21, 0)
-rotation = -3.14159
-lifetime = 0.5
-gravity = Vector2(0, 0)
-initial_velocity_min = 100.0
-initial_velocity_max = 150.0
-damping_min = 100.0
-damping_max = 100.0
-scale_amount_min = 8.0
-scale_amount_max = 15.0
-scale_amount_curve = SubResource("Curve_8pwx0")
-color_ramp = SubResource("Gradient_4h2m6")
-color_initial_ramp = SubResource("Gradient_wn0k1")
