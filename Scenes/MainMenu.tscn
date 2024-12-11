@@ -164,7 +164,6 @@ grow_vertical = 2
 mouse_filter = 2
 script = SubResource("GDScript_ikndx")
 should_log = true
-metadata/_edit_use_anchors_ = true
 
 [node name="MainMenu" type="VBoxContainer" parent="."]
 layout_mode = 1
