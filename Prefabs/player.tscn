@@ -1,6 +1,7 @@
-[gd_scene load_steps=13 format=3 uid="uid://bl285cb5yq4nq"]
+[gd_scene load_steps=14 format=3 uid="uid://bl285cb5yq4nq"]
 
 [ext_resource type="Texture2D" uid="uid://bvoptew6se7kx" path="res://Assets/Nave.png" id="1_8clb4"]
+[ext_resource type="PackedScene" uid="uid://b0jlttk21g8oc" path="res://Prefabs/Debug_Window.tscn" id="2_ppqj0"]
 
 [sub_resource type="GDScript" id="GDScript_v5a8b"]
 script/source = "extends CharacterBody2D
@@ -35,9 +36,9 @@ script/source = "extends CharacterBody2D
 @export_subgroup(\"Rope\")
 @export_range(0,1) var RopeTension: float  = 0.75
 
-var space_state: PhysicsDirectSpaceState2D
-var query: PhysicsShapeQueryParameters2D 
-var circle_shape : CircleShape2D 
+@onready var space_state: PhysicsDirectSpaceState2D = get_world_2d().direct_space_state
+var query: PhysicsShapeQueryParameters2D = PhysicsShapeQueryParameters2D.new()
+var circle_shape : CircleShape2D = CircleShape2D.new()
 var query_result : Array[Dictionary]
 # The object the player's attached to
 # It clears itself when screen's not longer touched
@@ -51,25 +52,26 @@ var proyected_velocity : Vector2
 var AcSpeed : float
 var objective_direction : Vector2
 
-
 # Multiplayer ID controlling this player
 var assigned_id : int
+
+@onready var synchronizer : MultiplayerSynchronizer = $MultiplayerSynchronizer
+@onready var line2D : Line2D = $Line2D
+
+@onready var debug_window : Control = $DebugWindowManager
+func debug(key : String, value : Variant) -> void: debug_window.set_value(key, value)
 
 func _ready() -> void:
 	velocity = Vector2.RIGHT
 	objective_direction  = proyected_velocity.normalized()
 	
-	$MultiplayerSynchronizer.set_multiplayer_authority(assigned_id)
-	
-	space_state = get_world_2d().direct_space_state
-	query = PhysicsShapeQueryParameters2D.new()
-	circle_shape  = CircleShape2D.new()
+	synchronizer.set_multiplayer_authority(assigned_id)
 	circle_shape.radius = auto_aim_radius
 	query.shape = circle_shape
-	$Line2D.add_point(position)
+	line2D.add_point(position)
 
 func _physics_process(_delta: float) -> void:
-	if !$MultiplayerSynchronizer.is_multiplayer_authority() : return
+	if !synchronizer.is_multiplayer_authority() : return
 	
 	ConstantSpeed()
 	if grappled: 
@@ -81,20 +83,19 @@ func _physics_process(_delta: float) -> void:
 	#queue_redraw()
 	look_at(lerp(transform.x.normalized(), objective_direction, rotation_weight) + position)
 	if grappled: 
-		$Line2D.set_point_position(1,attached_object.collider.position - position)
-		$Line2D.rotation = -rotation
-		$Line2D.width = 8 - pow(position.distance_to(attached_object.collider.position),0.5)/5
-		print($Line2D.width)
+		line2D.set_point_position(1,attached_object.collider.position - position)
+		line2D.rotation = -rotation
+		line2D.width = 8 - pow(position.distance_to(attached_object.collider.position),0.5)/5
 	
 #Handles touch input
 func _unhandled_input(event: InputEvent) -> void:
-	if !$MultiplayerSynchronizer.is_multiplayer_authority() : return
+	if !synchronizer.is_multiplayer_authority() : return
 	if event is not InputEventScreenTouch: return
 	
 	click_position = event.position
 	if !event.pressed: 
 		attached_object.clear()
-		$Line2D.remove_point(1)
+		if(line2D.points.size() > 1): line2D.remove_point(1)
 	else:
 		#region AutoAim
 		query.transform = Transform2D(0,Vector2.ONE,0,click_position)
@@ -105,9 +106,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			if collision.collider != self && click_collider_distance <= min_distance:
 				attached_object = collision
 				min_distance = click_collider_distance
-		
-		$Line2D.add_point(Vector2(attached_object.collider.position - position))
-		
+				line2D.add_point(Vector2(attached_object.collider.position - position))
 		#endregion
 	
 	grappled = !attached_object.is_empty()
@@ -174,16 +173,16 @@ colors = PackedColorArray(1, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1)
 [sub_resource type="GDScript" id="GDScript_cbm2h"]
 script/source = "extends CPUParticles2D
 
-var Lifetime : float
+var starting_lifetime : float
 var parent : CharacterBody2D
 
 func _ready() -> void:
 	parent = get_parent()
 	parent.velocity.length()
-	Lifetime = lifetime
+	starting_lifetime = lifetime
 	
-func _process(delta: float) -> void:
-	lifetime = lerpf(0,Lifetime,pow(parent.velocity.length(),0.5)/50)
+func _process(_delta: float) -> void:
+	lifetime = lerpf(0,starting_lifetime,pow(parent.velocity.length(),0.5)/50)
 "
 
 [sub_resource type="Curve" id="Curve_8pwx0"]
@@ -264,3 +263,5 @@ scale_amount_max = 15.0
 scale_amount_curve = SubResource("Curve_8pwx0")
 color_ramp = SubResource("Gradient_4h2m6")
 color_initial_ramp = SubResource("Gradient_wn0k1")
+
+[node name="DebugWindowManager" parent="." instance=ExtResource("2_ppqj0")]
