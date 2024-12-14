@@ -153,6 +153,15 @@ properties/0/replication_mode = 2
 properties/1/path = NodePath(".:rotation")
 properties/1/spawn = true
 properties/1/replication_mode = 2
+properties/2/path = NodePath("CPUParticles2D:lifetime")
+properties/2/spawn = true
+properties/2/replication_mode = 2
+properties/3/path = NodePath("Line2D:points")
+properties/3/spawn = true
+properties/3/replication_mode = 2
+properties/4/path = NodePath("Line2D:width")
+properties/4/spawn = true
+properties/4/replication_mode = 2
 
 [sub_resource type="Curve" id="Curve_lhwfi"]
 _data = [Vector2(0, 1), 0.0, 0.0, 0, 0, Vector2(1, 0), -3.15441, 0.0, 0, 0]
@@ -178,7 +187,6 @@ var parent : CharacterBody2D
 
 func _ready() -> void:
 	parent = get_parent()
-	parent.velocity.length()
 	starting_lifetime = lifetime
 	
 func _process(_delta: float) -> void:

@@ -14,11 +14,11 @@ script/source = "extends Control
 
 var peer : ENetMultiplayerPeer
 
-var username_line : LineEdit
-var lobby_name_line : LineEdit
-var address_line : LineEdit
-var username_warning : Label
-var address_checkbox : CheckBox
+@onready var username_line : LineEdit = $MainMenu/FirstLine/UsernameInput/UsernameLine
+@onready var lobby_name_line : LineEdit = $MainMenu/FirstLine/LobbyNameInput/LobbyNameLine
+@onready var address_line : LineEdit = $MainMenu/ServerAddressInfo/LineEdit
+@onready var username_warning : Label = $MainMenu/WariningLabel
+@onready var address_checkbox : CheckBox = $MainMenu/ServerAddressInfo/Checkbox
 
 
 func _ready() -> void:
@@ -30,11 +30,13 @@ func _ready() -> void:
 	
 	$MainMenu/BottomFrame/ServerBrowser.on_join_server.connect(on_join_server)
 	
-	username_line = $MainMenu/FirstLine/UsernameInput/UsernameLine
-	username_warning = $MainMenu/WariningLabel
-	lobby_name_line = $MainMenu/FirstLine/LobbyNameInput/LobbyNameLine
-	address_line = $MainMenu/ServerAddressInfo/LineEdit
-	address_checkbox = $MainMenu/ServerAddressInfo/Checkbox
+	call_deferred(\"process_cmd_args\")
+
+func process_cmd_args() -> void:
+	var args : Array = OS.get_cmdline_args()
+	if args.has(\"kill\") : get_tree().quit()
+	if args.has(\"host\"): _on_start_host_button_down()
+	if args.has(\"client\"): PlayerData.setup_listener()
 
 # On every connection and disconnection, server and client
 func on_peer_connected(id : int) -> void:
@@ -126,13 +128,7 @@ func get_address_from_line() -> String :
 
 
 func _on_debug_timer_timeout() -> void:
-	if OS.get_cmdline_args().size() > 2 :
-		var arg : String = OS.get_cmdline_args()[2]
-		match arg :
-			\"host\":
-				_on_start_host_button_down()
-			\"client\":
-				PlayerData.setup_listener()
+	pass
 "
 
 [sub_resource type="GDScript" id="GDScript_o8gq4"]
