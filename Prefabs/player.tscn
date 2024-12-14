@@ -68,7 +68,8 @@ func _ready() -> void:
 	synchronizer.set_multiplayer_authority(assigned_id)
 	circle_shape.radius = auto_aim_radius
 	query.shape = circle_shape
-	line2D.add_point(position)
+	line2D.hide()
+	line2D.points = [Vector2.ZERO, Vector2.ZERO]
 
 func _physics_process(_delta: float) -> void:
 	if !synchronizer.is_multiplayer_authority() : return
@@ -82,11 +83,8 @@ func _physics_process(_delta: float) -> void:
 	move_and_slide()
 	#queue_redraw()
 	look_at(lerp(transform.x.normalized(), objective_direction, rotation_weight) + position)
-	if grappled: 
-		line2D.set_point_position(1,attached_object.collider.position - position)
-		line2D.rotation = -rotation
-		line2D.width = 8 - pow(position.distance_to(attached_object.collider.position),0.5)/5
-	
+	update_line()
+
 #Handles touch input
 func _unhandled_input(event: InputEvent) -> void:
 	if !synchronizer.is_multiplayer_authority() : return
@@ -95,7 +93,6 @@ func _unhandled_input(event: InputEvent) -> void:
 	click_position = event.position
 	if !event.pressed: 
 		attached_object.clear()
-		if(line2D.points.size() > 1): line2D.remove_point(1)
 	else:
 		#region AutoAim
 		query.transform = Transform2D(0,Vector2.ONE,0,click_position)
@@ -106,7 +103,6 @@ func _unhandled_input(event: InputEvent) -> void:
 			if collision.collider != self && click_collider_distance <= min_distance:
 				attached_object = collision
 				min_distance = click_collider_distance
-				line2D.add_point(Vector2(attached_object.collider.position - position))
 		#endregion
 	
 	grappled = !attached_object.is_empty()
@@ -135,11 +131,14 @@ func HookLogic() -> void:
 func ConstantSpeed() -> void:
 	var SPEEDFORCE : float = ((MAXSPEED - velocity.project(transform.x).length()) * ACCELERATION) 
 	velocity +=  SPEEDFORCE * transform.x.normalized()
-	
 
-func _draw() -> void:
-	#draw_line(Vector2.ZERO, velocity.length()/5 * Vector2.LEFT,Color.WHITE,-1)
-	pass
+func update_line() -> void:
+	if(grappled): 
+		line2D.show()
+		line2D.points = [Vector2.ZERO, attached_object.collider.position - position]
+		line2D.rotation = -rotation
+		line2D.width = 8 - pow(position.distance_to(attached_object.collider.position),0.5)/5
+	else : line2D.hide()
 "
 
 [sub_resource type="CapsuleShape2D" id="CapsuleShape2D_7rh4i"]
@@ -159,9 +158,15 @@ properties/2/replication_mode = 2
 properties/3/path = NodePath("Line2D:points")
 properties/3/spawn = true
 properties/3/replication_mode = 2
-properties/4/path = NodePath("Line2D:width")
+properties/4/path = NodePath("Line2D:rotation")
 properties/4/spawn = true
 properties/4/replication_mode = 2
+properties/5/path = NodePath("Line2D:visible")
+properties/5/spawn = true
+properties/5/replication_mode = 2
+properties/6/path = NodePath("Line2D:width")
+properties/6/spawn = true
+properties/6/replication_mode = 2
 
 [sub_resource type="Curve" id="Curve_lhwfi"]
 _data = [Vector2(0, 1), 0.0, 0.0, 0, 0, Vector2(1, 0), -3.15441, 0.0, 0, 0]
